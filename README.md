@@ -329,7 +329,7 @@ La aplicación cuenta con **tres pestañas principales**, cada una enfocada en u
 Muestra un **mapa interactivo de México** dividido por municipios.
 
 <p align="center">
-  <img src="images/mapa_mexico.png" alt="Mapa de Calor México" width="80%">
+  <img src="images/mapa_mexico.png" alt="Mapa de Calor México" width="100%">
   <br>
   <i>Figura 1. Mapa interactivo coloreado por índice de similitud.</i>
 </p>
@@ -356,7 +356,7 @@ Muestra un **mapa interactivo de México** dividido por municipios.
 Un sistema de **agentes colaborativos (multi-agente)** que asisten al usuario en la exploración y generación de ideas.
 
 <p align="center">
-  <img src="images/respuesta_analista.png" alt="Analista" width="75%">
+  <img src="images/respuesta_analista.png" alt="Analista" width="100%">
   <br>
   <i>Figura 2. Ejemplo de interacción con el agente analista.</i>
 </p>
