@@ -53,6 +53,8 @@ Este proyecto aborda el **Análisis Topológico de Datos (TDA)** aplicado a la c
 
 El flujo técnico desarrollado para el **Análisis Topológico de Datos (TDA)** combina **cómputo acelerado por GPU** con prácticas modernas de reproducibilidad científica. Se implementó una **arquitectura modular OOP**, optimizando la construcción del **complejo de Vietoris–Rips** mediante **ripser++**. Se integraron agentes MCP y un pipeline RAG para explicación dinámica y recuperación de contexto. El objetivo es comparar municipios y generar un índice de similitud usando datos de suelo, clima y uso de suelo.
 
+> ⚠️ Nota de autoría: Este repositorio contiene mi versión individual del proyecto original realizado en equipo. Todo el código y análisis aquí corresponde únicamente a mi contribución y a mejoras adicionales realizadas por mí, sin incluir trabajo de otros miembros del equipo.
+
 ---
 
 ## 📂 Datos y Preprocesamiento
