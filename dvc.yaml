@@ -1,0 +1,94 @@
+stages:
+  data_preprocessing_soil:
+    cmd: python3 src/suelo/data_preprocessing.py
+    deps:
+    - src/suelo/data_preprocessing.py
+    - src/utils.py
+    - data/Division_politica/mun22gw.shp
+    - data/Edafologia_perfilsuelo
+    - data/Suelo_vegetacion
+    params:
+      - data_preprocessing_soil.k_neighbors
+      - data_preprocessing_soil.threshold_m
+    outs:
+    - data/processed/suelo/suelo_merged.parquet
+
+  data_preprocessing_seeds:
+    cmd: python3 src/cultivos/data_preprocessing.py
+    deps:
+    - src/cultivos/data_preprocessing.py
+    - src/utils.py
+    - data/Sitios/Cierre_agricola_mun_2024.csv
+    params:
+      - data_preprocessing_seeds.lower_bound
+    outs:
+    - data/processed/cultivos/evaluacion_cultivos.parquet
+    - data/processed/cultivos/municipios_principales.parquet
+  
+  data_merging_climate:
+    cmd: python3 src/clima/data_merging.py
+    deps:
+    - src/clima/data_merging.py
+    - src/utils.py
+    - data/datos_climatologicos
+    params:
+      - data_merging_climate.start_date
+      - data_merging_climate.end_date
+    outs:
+    - data/processed/clima/climatologia_todos_los_archivos.csv
+    
+  data_cleaning_climate:
+    cmd: python3 src/clima/data_cleaning.py
+    deps:
+    - src/clima/data_cleaning.py
+    - src/utils.py
+    - data/processed/clima/climatologia_todos_los_archivos.csv
+    params:
+      - data_cleaning_climate.threshold
+      - data_cleaning_climate.method
+      - data_cleaning_climate.date_limit
+    outs:
+    - data/processed/clima/climatologia_limpio.csv
+
+  data_integration_climate:
+    cmd: python3 src/clima/data_integration.py
+    deps:
+    - src/clima/data_integration.py
+    - src/utils.py
+    - data/processed/clima/climatologia_limpio.csv
+    - data/Division_politica/mun22gw.shp
+    params:
+      - data_integration_climate.threshold_m
+    outs:
+    - data/processed/clima/climatologia_merged.parquet
+
+  model_building:
+    cmd: python3 src/model/model_building.py
+    deps:
+    - src/model/model_building.py
+    - src/utils.py
+    - src/model/model_similarity.py
+    - src/homology.py
+    - data/processed/clima/climatologia_merged.parquet
+    - data/processed/suelo/suelo_merged.parquet
+    - data/processed/cultivos/evaluacion_cultivos.parquet
+    - data/processed/cultivos/municipios_principales.parquet
+    params:
+      - model_building.general_params
+      - model_building.metric
+      - model_building.params_list
+      - model_building.candidate
+      - model_building.device
+      - model_building.optimize
+  
+  preprocessing_app_data:
+    cmd: python3 src/preprocess_app.py
+    deps:
+    - src/preprocess_app.py
+    - src/utils.py
+    - flask_app/results/similarity_matrix.parquet
+    - data/Division_politica/mun22gw.shp
+    - data/processed/suelo/suelo_merged.parquet
+    - data/processed/cultivos/evaluacion_cultivos.parquet
+
+

@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <title>Mapa de similitud - App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <style>
+    /* ---------------- Layout general ---------------- */
+    body, html {
+        height: 100%;
+        margin: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #1b1b1b; /* fondo oscuro */
+        color: #eee; /* texto claro */
+    }
+
+    /* ---------------- Mapa ---------------- */
+    #map {
+        height: 100vh;
+        width: 100%;
+    }
+
+    /* ---------------- Sidebar ---------------- */
+    .sidebar {
+        height: 100vh;
+        overflow: auto;
+        padding: 16px;
+        background: #222; /* negro espacial */
+        border-right: 1px solid #333;
+        box-shadow: 2px 0 8px rgba(0,0,0,0.6);
+    }
+
+    /* títulos y bloques de info */
+    .sidebar h5, .sidebar h6 {
+        color: #fff;
+    }
+
+    .mun-info {
+        margin-top: 16px;
+        font-size: 0.9rem;
+    }
+
+    /* ---------------- Selects ---------------- */
+    .form-select {
+        background: #2b2b2b;
+        color: #eee;
+        border: 1px solid #444;
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+        transition: 0.2s;
+    }
+
+    .form-select:focus {
+        outline: none;
+        border-color: #66ccff;
+        box-shadow: 0 0 8px rgba(102,204,255,0.6);
+    }
+
+    /* ---------------- Tabla ---------------- */
+    #rankingTable {
+        width: 100%;
+        font-size: 0.85rem;
+        border-collapse: collapse;
+        background: #2b2b2b; /* fondo de la tabla */
+        color: #eee;          /* texto claro */
+        border: 1px solid #444;
+    }
+
+    #rankingTable th {
+        background: #333;      /* cabecera más oscura */
+        color: #fff;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        padding: 6px 8px;
+    }
+
+    #rankingTable td {
+        background: #2b2b2b;
+        color: #eee;
+        padding: 6px 8px;
+        border-bottom: 1px solid #444;
+        transition: background 0.2s;
+    }
+
+    /* filas alternadas tipo striped */
+    #rankingTable tr:nth-child(even) td {
+        background: #272727;
+    }
+
+    /* efecto hover */
+    #rankingTable tr:hover td {
+        background: #3a3a3a;
+    }
+
+    /* links de municipio dentro de la tabla */
+    td.mun-link {
+        cursor: pointer;
+        color: #66ccff;
+        text-decoration: underline;
+        transition: filter 0.2s ease, color 0.2s ease;
+    }
+
+    td.mun-link:hover {
+        filter: brightness(1.5);
+        color: #66ccff;
+    }
+
+    td.mun-link:active {
+        filter: brightness(1.8);
+    }
+
+    /* ---------------- Info Box ---------------- */
+    #infoBox {
+        padding: 8px;
+        background: #2b2b2b;
+        border-radius: 6px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.7);
+        color: #fff;
+    }
+
+    /* ---------------- Pequeños detalles ---------------- */
+    small {
+        color: #aaa;
+    }
+
+    </style>
+
+  </head>
+  <body>
+    <div class="container-fluid">
+      <div class="row g-0">
+        <div class="col-3 sidebar">
+          <h5>Mapa de Similaridad</h5>
+          <label for="stateSelect">Estado</label>
+          <select id="stateSelect" class="form-select mb-2">
+            <option value="">(Selecciona)</option>
+            {% for s in states %}
+            <option value="{{ s }}">{{ s }}</option>
+            {% endfor %}
+          </select>
+
+          <label for="munSelect">Municipio referencia</label>
+          <select id="munSelect" class="form-select mb-2">
+            <option value="">(Selecciona estado primero)</option>
+          </select>
+
+          <div class="mun-info">
+            <h6>Top 5 municipios parecidos </h6>
+            <table id="rankingTable" class="table table-sm table-striped">
+              <thead>
+                <tr><th>Municipio</th><th>Sim</th><th>Conf</th><th>Score</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
+          <div class="mun-info">
+            <h6>Info del municipio (hover o click)</h6>
+            <div id="infoBox">Pasa el cursor sobre un municipio.</div>
+          </div>
+
+          <div class="mt-3">
+            <small>Base tiles: NASA GIBS (Blue Marble) / Esri imagery</small><br/>
+            <small>Polígonos: división municipal (simplificada)</small>
+            <!-- REEMPLAZAR este bloque (original) -->
+
+            <!-- --- NUEVO: botones para nuevas páginas (Analista y Revisión Documentación) -->
+            <div class="mt-3 d-flex flex-column gap-2">
+              <small>Base tiles: NASA GIBS (Blue Marble) / Esri imagery</small><br/>
+              <small>Polígonos: división municipal (simplificada)</small>
+
+              <!-- Botones nuevos -->
+              <div class="mt-2">
+                <a href="{{ url_for('page_analyst_chat') if false else url_for('page_analyst_chat') }}" class="btn btn-sm btn-info me-1" style="background:#0ea5a4;border-color:#0ea5a4;">
+                  Agente Analista
+                </a>
+
+                <a href="{{ url_for('page_supervisor_chat') if false else url_for('page_supervisor_chat') }}" class="btn btn-sm btn-secondary me-1" style="background:#4b5563;border-color:#4b5563;">
+                  Agente Revisión Documentación
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-9">
+          <div id="map"></div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+    function valueToColorYlOrRd(v){
+      if(v===null || v===undefined) return "#d9d9d9";
+      v=Math.max(0,Math.min(1,v));
+      const start=[255,255,204], mid=[255,204,102], end=[128,0,0];
+      if(v<0.5){
+        let t=v/0.5;
+        return `rgb(${Math.round(start[0]+t*(mid[0]-start[0]))},${Math.round(start[1]+t*(mid[1]-start[1]))},${Math.round(start[2]+t*(mid[2]-start[2]))})`;
+      } else{
+        let t=(v-0.5)/0.5;
+        return `rgb(${Math.round(mid[0]+t*(end[0]-mid[0]))},${Math.round(mid[1]+t*(end[1]-mid[1]))},${Math.round(mid[2]+t*(end[2]-mid[2]))})`;
+      }
+    }
+    function valueToColor(v){ return valueToColorYlOrRd(v); }
+
+    let map = L.map('map',{preferCanvas:true}).setView([23,-102],5);
+    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{attribution:"Esri World Imagery",maxZoom:18}).addTo(map);
+
+    const stateLabelsUrl = "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}";
+    const stateLabelsAttr = "Labels © Esri";
+    L.tileLayer(stateLabelsUrl, {
+        attribution: stateLabelsAttr,
+        maxZoom: 18,
+        pane: 'overlayPane',
+        opacity: 1.0
+    }).addTo(map);4
+    
+    let geoLayer = null;
+    let currentValues = {};
+    let selectedCVE = null;  // dropdown
+    let highlightCVE = null; // tabla
+
+    fetch("/geojson").then(r=>r.json()).then(geo=>{
+      geoLayer = L.geoJson(geo,{
+        style:f=>({color:"#666",weight:0.3,fillColor:"#d9d9d9",fillOpacity:0.3}),
+        onEachFeature:function(f,layer){
+          layer.on({
+            mouseover:function(e){
+              const code=e.target.feature.properties.CVEGEO;
+              const data=currentValues[code];
+              let text=`${f.properties.NOMGEO}, ${f.properties.NOM_ENT}<br>CVEGEO: ${code}`;
+              if(data) text+=`<br>Sim:${data.sim.toFixed(3)}, Conf:${data.conf.toFixed(3)}, Score:${data.score.toFixed(3)}, Rank:${data.rank}`;
+              layer.bindTooltip(text).openTooltip();
+            },
+            click:function(e){
+              // Click en mapa: solo morado, no recalcula escala
+              highlightCVE = e.target.feature.properties.CVEGEO;
+              geoLayer.eachLayer(layer=>{
+                if(layer.feature.properties.CVEGEO===highlightCVE){
+                  map.fitBounds(layer.getBounds(), {maxZoom:8});
+                }
+              });
+              colorizePolygons();
+            }
+          });
+        }
+      }).addTo(map);
+    });
+
+    const stateSelect = document.getElementById("stateSelect");
+    const munSelect = document.getElementById("munSelect");
+    const rankingBody = document.querySelector("#rankingTable tbody");
+
+    stateSelect.addEventListener("change", ()=>{
+      const st = stateSelect.value;
+      munSelect.innerHTML="<option>Cargando...</option>";
+      if(!st){ munSelect.innerHTML="<option>(Selecciona estado primero)</option>"; return; }
+      fetch(`/municipalities?state=${encodeURIComponent(st)}`).then(r=>r.json()).then(list=>{
+        munSelect.innerHTML="<option value=''>(Selecciona municipio)</option>";
+        list.forEach(it=>{
+          const opt=document.createElement("option");
+          opt.value=it.CVEGEO;
+          opt.innerText=`${it.NOMGEO}, ${it.NOM_ENT}`;
+          munSelect.appendChild(opt);
+        });
+      });
+    });
+
+    munSelect.addEventListener("change", ()=>{
+      const cve = munSelect.value;
+      if(!cve) return;
+
+      selectedCVE = cve;
+      highlightCVE = null; // reset morado
+      Promise.all([
+        fetch(`/similarity/${encodeURIComponent(cve)}`).then(r=>r.json()),
+        fetch(`/info/${encodeURIComponent(cve)}`).then(r=>r.json())
+      ]).then(([simResp,infoResp])=>{
+        currentValues={};
+        const order = simResp.cvegeo_order;
+        for(let i=0;i<order.length;i++){
+          const code=order[i];
+          const simVal=simResp.values[i]!==undefined ? simResp.values[i] : null;
+          const confVal=(infoResp.confidence_values && infoResp.confidence_values[code]!==undefined) ? infoResp.confidence_values[code] : null;
+          const score=(simVal!==null && confVal!==null) ? simVal*confVal : null;
+          currentValues[code] = {sim:simVal, conf:confVal, score:score, rank:0, NOMGEO: infoResp[code]?.NOMGEO??code};
+        }
+
+        const ranked = Object.entries(currentValues)
+          .filter(e=>e[1].score!==null && e[0]!==selectedCVE)
+          .sort((a,b)=>b[1].score-a[1].score);
+        ranked.forEach((el,idx)=>{ currentValues[el[0]].rank = idx+1; });
+
+        // top 5 tabla
+        rankingBody.innerHTML="";
+        ranked.slice(0,5).forEach(([code,data])=>{
+          const tr = document.createElement("tr");
+          tr.innerHTML=`<td class="mun-link" data-cve="${code}">${data.NOMGEO}</td><td>${data.sim.toFixed(3)}</td><td>${data.conf.toFixed(3)}</td><td>${data.score.toFixed(3)}</td>`;
+          rankingBody.appendChild(tr);
+        });
+
+        // listener click tabla
+        rankingBody.querySelectorAll(".mun-link").forEach(td=>{
+          td.addEventListener("click", ()=>{
+            highlightCVE = td.dataset.cve;
+            geoLayer.eachLayer(layer=>{
+              if(layer.feature.properties.CVEGEO===highlightCVE){
+                map.fitBounds(layer.getBounds(), {maxZoom:9});
+              }
+            });
+            colorizePolygons();
+          });
+        });
+
+        colorizePolygons(); // recalcula escala solo al cambiar dropdown
+      });
+    });
+
+    function colorizePolygons(){
+      if(!geoLayer) return;
+
+      // normalización excluyendo selectedCVE
+      const sims = Object.entries(currentValues)
+        .filter(([code,data])=>code!==selectedCVE && data.sim!==null)
+        .map(([code,data])=>data.sim);
+      const minSim = Math.min(...sims);
+      const maxSim = Math.max(...sims);
+
+      geoLayer.eachLayer(layer=>{
+        const c = layer.feature.properties.CVEGEO;
+        const val = currentValues[c]?.sim ?? null;
+        let normVal = null;
+        if(val!==null && c!==selectedCVE) normVal = (val-minSim)/(maxSim-minSim);
+
+        let fillColor = "#d9d9d9";
+
+        // prioridad: highlightCVE (morado) > selectedCVE (negro) > escala normal
+        if(c===highlightCVE){
+          fillColor = "#800080"; 
+        } else if(c===selectedCVE){
+          fillColor = "#000000"; 
+        } else if(normVal!==null){
+          fillColor = valueToColor(normVal);
+        }
+
+        layer.setStyle({
+          fillColor: fillColor,
+          fillOpacity: val===null ? 0.45 : 0.95,
+          color:"#444",
+          weight:0.25
+        });
+      });
+    }
+    </script>
+  </body>
+</html>

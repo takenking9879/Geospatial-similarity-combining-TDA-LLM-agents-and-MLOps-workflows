@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Agente Analista — RAG Municipios</title>
+  <style>
+    /* Diseño futurista con sombras cian y layout tipo ChatGPT */
+    :root{
+      --bg:#0b0f14;
+      --panel:#071018;
+      --accent:#00f0ff;
+      --muted:#93a1a1;
+      --glass:rgba(255,255,255,0.02);
+    }
+    html,body{
+      height:100%;
+      margin:0;
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue";
+      background:linear-gradient(180deg,#02040a 0%,#071018 60%);
+      color:#e6f7ff;
+    }
+    a{color:var(--accent)}
+    .container{
+      display:flex;
+      height:100vh;
+      gap:20px;
+      padding:20px;
+      box-sizing:border-box;
+    }
+    .left,.right{
+      border-radius:12px;
+      padding:18px;
+      box-shadow:0 8px 30px rgba(0,255,255,0.06);
+      background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));
+      backdrop-filter:blur(6px);
+    }
+    .left{
+      width:360px;
+      min-width:320px;
+      flex-shrink:0;
+      border:1px solid rgba(0,255,255,0.06);
+    }
+    .right{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      border:1px solid rgba(0,255,255,0.04);
+    }
+
+    h1{
+      font-size:18px;
+      margin:0 0 12px 0;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .badge{
+      padding:6px 10px;
+      border-radius:999px;
+      background:linear-gradient(90deg,#002b2f44,#003f4f22);
+      color:var(--accent);
+      font-weight:600;
+    }
+    label{
+      display:block;
+      margin:8px 0 4px;
+      color:var(--muted);
+      font-size:13px;
+    }
+    select,input,textarea{
+      width:100%;
+      padding:10px;
+      border-radius:8px;
+      border:1px solid rgba(0,255,255,0.06);
+      background:transparent;
+      color:inherit;
+    }
+    button{
+      background:linear-gradient(90deg,#00e6ff,#00a8ff);
+      border:none;
+      padding:10px 14px;
+      border-radius:10px;
+      font-weight:600;
+      color:#022;
+      cursor:pointer;
+      box-shadow:0 6px 18px rgba(0,170,255,0.12);
+    }
+    .cvegeo{
+      margin-top:10px;
+      padding:8px;
+      border-radius:8px;
+      background:linear-gradient(90deg,rgba(0,255,255,0.03),rgba(0,255,255,0.01));
+      color:var(--accent);
+      font-weight:700;
+    }
+
+    /* Chat area */
+    /* CAMBIO: convertimos .messages en un flex-column para que sus hijos 
+              (las burbujas .msg) puedan usar align-self y estirarse correctamente. */
+    .messages{
+      flex:1;
+      display:flex;                /* CAMBIO: permitir align-self en hijos */
+      flex-direction:column;       /* CAMBIO: pila vertical de mensajes */
+      gap:12px;                    /* CAMBIO: espacio entre mensajes */
+      min-height:0;                /* CAMBIO: evita problemas con overflow en flex */
+      overflow-y:auto;             /* CAMBIO: scroll vertical limpio */
+      padding:14px;
+      border-radius:10px;
+      background:linear-gradient(180deg,rgba(0,0,0,0.04),rgba(255,255,255,0.01));
+      border:1px solid rgba(255,255,255,0.02);
+      box-sizing:border-box;       /* CAMBIO: garantizar box sizing */
+    }
+
+    /* CAMBIO: base para cada burbuja - ahora como flex item */
+    .msg{
+      margin-bottom:0;             /* CAMBIO: eliminado doble gap (usamos gap en .messages) */
+      padding:10px;
+      border-radius:8px;
+      /* Nota: no forzamos ancho aquí; lo controlan .msg.user y .msg.bot */
+      line-height:1.5; /* mejor legibilidad */
+      /* ❌ REMOVIDO: white-space: pre-wrap;  (se eliminó para que marked() gestione el HTML) */
+      word-wrap:break-word;
+      box-sizing:border-box; /* CAMBIO: importante para ancho/padding consistentes */
+    }
+
+    /* CAMBIO: usuario sigue como burbuja compacta a la derecha */
+    .msg.user{
+      background:linear-gradient(90deg,#05121a,#08202a);
+      /* Al ser hijo de un contenedor flex-column, align-self funciona */
+      align-self:flex-end;        /* CAMBIO: empuja la burbuja del usuario a la derecha */
+      border:1px solid rgba(0,255,255,0.03);
+      max-width:80%;              /* CAMBIO: no ocupará todo el ancho */
+      width:auto;                 /* CAMBIO: que se ajuste al contenido hasta max-width */
+    }
+
+    /* CAMBIO: respuestas del bot ocupan todo el ancho utilizable del .messages */
+    .msg.bot{
+      background:linear-gradient(90deg,#031018,#041827);
+      border:1px solid rgba(0,255,255,0.04);
+      color:#dffaff;
+      align-self:stretch;         /* CAMBIO: estira al ancho del contenedor .messages */
+      width:100%;                 /* CAMBIO: asegurar que ocupe todo el ancho disponible */
+      box-sizing:border-box;
+    }
+
+    /* 💡 Evita que se vea el tachado del Markdown ~~texto~~ */
+    .msg.bot del {
+      text-decoration: none;
+    }
+
+    /* Markdown dentro de mensajes */
+    .msg.bot h1,.msg.bot h2,.msg.bot h3{
+      color:var(--accent);
+      margin-top:6px;
+    }
+    .msg.bot p{margin:4px 0;}
+    /* 🔹 LISTAS MÁS COMPACTAS (SE AGREGÓ soporte para <ol>) */
+    .msg.bot ul{
+      margin:2px 0 2px 16px;
+      padding-left:14px;
+      list-style-type:disc;
+    }
+    .msg.bot ol{
+      margin:2px 0 2px 18px;
+      padding-left:18px;
+      list-style-type:decimal;
+    }
+    .msg.bot li{
+      margin-bottom:2px;
+      line-height:1.4;
+    }
+    .msg.bot code{
+      background:rgba(0,255,255,0.08);
+      padding:2px 4px;
+      border-radius:4px;
+      font-family:monospace;
+      color:#aef;
+    }
+
+    .meta{font-size:12px;color:var(--muted);margin-bottom:6px}
+    .toolbar{display:flex;gap:10px;align-items:center}
+    .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+
+    .back-btn{
+      background:transparent;
+      border:1px solid rgba(255,255,255,0.03);
+      color:var(--muted);
+      padding:8px;
+      border-radius:8px;
+      cursor:pointer;
+    }
+    .hint{
+      font-size:12px;
+      color:var(--muted);
+      margin-top:6px;
+    }
+
+    /* --- NUEVO FIX VISUAL: estilo para selects y options --- */
+    select {
+      background-color:#04101a;
+      color:#e6f7ff;
+      border:1px solid rgba(0,255,255,0.1);
+      appearance:none;
+      -webkit-appearance:none;
+      -moz-appearance:none;
+      padding-right:24px;
+      background-image:linear-gradient(45deg,transparent 50%,var(--accent) 50%),
+                       linear-gradient(135deg,var(--accent) 50%,transparent 50%);
+      background-position:calc(100% - 15px) calc(1em + 2px),
+                          calc(100% - 10px) calc(1em + 2px);
+      background-size:5px 5px,5px 5px;
+      background-repeat:no-repeat;
+      border-radius:8px;
+    }
+    select:focus{
+      outline:none;
+      border-color:var(--accent);
+      box-shadow:0 0 8px rgba(0,255,255,0.3);
+    }
+    option{
+      background-color:#04101a;
+      color:#e6f7ff;
+    }
+    /* --- FIN NUEVO FIX VISUAL --- */
+  </style>
+
+  <!-- NUEVO: librería para renderizar Markdown -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+  <div style="padding:12px;">
+    <a href="/" class="back-btn">← Volver</a>
+  </div>
+  <div class="container">
+    <aside class="left">
+      <h1><span class="badge">Agente Analista</span></h1>
+
+      <label>Estado</label>
+      <select id="stateSelect"><option>Cargando...</option></select>
+
+      <label>Municipio</label>
+      <select id="munSelect"><option>Selecciona un estado</option></select>
+
+      <label>Cultivo (lista de apoyo)</label>
+      <select id="cultivoSelect"><option>Cargando...</option></select>
+
+      <div class="cvegeo" id="cvegeoBox">CVEGEO: —</div>
+
+      <div class="hint">Selecciona Estado → Municipio para obtener su <strong>CVEGEO</strong>. El cultivo es solo una ayuda para el prompt.</div>
+    </aside>
+
+    <section class="right">
+      <!-- *** ZONA DE CHAT MODIFICADA (estilo similar al supervisor) *** -->
+      <div class="topbar">
+        <div>
+          <strong>Conversación con Agente Analista</strong>
+          <div class="meta">Ver el prompt generándose en tiempo real</div>
+        </div>
+        <div class="toolbar">
+          <button id="clearBtn" class="back-btn">Limpiar</button>
+        </div>
+      </div>
+
+      <div class="messages" id="messages"></div>
+
+      <div class="inputRow" style="display:flex;gap:10px;align-items:center">
+        <input id="inputBox" placeholder="Escribe tu consulta al agente..." />
+        <button id="sendBtn">Enviar</button>
+      </div>
+      <!-- *** FIN ZONA DE CHAT MODIFICADA *** -->
+    </section>
+  </div>
+
+  <script>
+    const stateSelect=document.getElementById("stateSelect");
+    const munSelect=document.getElementById("munSelect");
+    const cultivoSelect=document.getElementById("cultivoSelect");
+    const cvegeoBox=document.getElementById("cvegeoBox");
+    const messages=document.getElementById("messages");
+    const inputBox=document.getElementById("inputBox");
+    const sendBtn=document.getElementById("sendBtn");
+    const clearBtn=document.getElementById("clearBtn");
+
+    let dictMapping={};
+
+    async function loadDropdowns(){
+      const r=await fetch("/api/dict_cvegeo_states");
+      const j=await r.json();
+      dictMapping=j.mapping||{};
+      stateSelect.innerHTML=j.states.map(s=>`<option>${s}</option>`).join("");
+      const rc=await fetch("/api/lista_cultivos");
+      const jc=await rc.json();
+      // 🔹 ORDENAR CULTIVOS ALFABÉTICAMENTE (en español, respeta acentos y ñ)
+      jc.sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+      cultivoSelect.innerHTML=jc.map(c=>`<option>${c}</option>`).join("");
+      populateMunicipios();
+    }
+
+    function populateMunicipios(){
+      const s=stateSelect.value;
+      const arr=dictMapping[s]||[];
+      munSelect.innerHTML=arr.map(x=>`<option value="${x.cvegeo}">${x.name} — ${x.cvegeo}</option>`).join("");
+      updateCvegeo();
+    }
+
+    function updateCvegeo(){
+      const sel=munSelect.value;
+      cvegeoBox.textContent=`CVEGEO: ${sel||"—"}`;
+    }
+
+    stateSelect.addEventListener("change",populateMunicipios);
+    munSelect.addEventListener("change",updateCvegeo);
+    clearBtn.addEventListener("click",()=>{messages.innerHTML="";});
+
+    // 🔹 NUEVO: función para limpiar saltos excesivos
+    function cleanExcessiveNewlines(text){
+      text=text.replace(/\n{3,}/g,"\n\n");
+      text=text.replace(/([^\n])\n{3,}([^\n])/g,"$1\n\n$2");
+      return text;
+    }
+
+    // 🔹 NUEVO: corrige líneas que empiezan con ". " (problema típico en stream)
+    function fixBrokenNumberedLists(text) {
+  // Detecta líneas que empiezan con un número seguido de un punto y espacio (o solo un punto) 
+  // y asegura que Markdown las interprete correctamente
+      return text.replace(/(^|\n)\s*(\d*\.)\s+/g, "$1$2 ");
+    }
+
+    function appendMessage(text,who="bot"){
+      const div=document.createElement("div");
+      div.className="msg "+(who==="user"?"user":"bot");
+      if(who==="bot"){
+        // aplicar limpieza y corrección antes de parsear Markdown
+        const cleaned = fixBrokenNumberedLists(cleanExcessiveNewlines(text)); // 🔹 cambio: se añadió fixBrokenNumberedLists
+        div.innerHTML=marked.parse(cleaned);
+      }else{
+        div.textContent=text;
+      }
+      messages.appendChild(div);
+      messages.scrollTop=messages.scrollHeight;
+    }
+
+    // ⏳ Función de pausa
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // NUEVO: streaming con Markdown en tiempo real + limpieza y corrección + cronómetro funcional
+    async function streamToMessages(url,payload){
+      // Usamos la llamada existente para crear la burbuja inicial
+      appendMessage("⏳ Generando respuesta...","bot");
+
+      // Localizamos la última burbuja .msg.bot creada por appendMessage y la usamos como cronómetro.
+      // Esto evita modificar appendMessage.
+      let botBubbles = messages.querySelectorAll('.msg.bot');
+      let timerElem = botBubbles.length ? botBubbles[botBubbles.length - 1] : null;
+
+      // Si por alguna razón no existe, creamos una burbuja propia (fallback seguro).
+      if(!timerElem){
+        timerElem = document.createElement('div');
+        timerElem.className = 'msg bot';
+        timerElem.textContent = '⏳ Generando respuesta... (0.0s)';
+        messages.appendChild(timerElem);
+      } else {
+        // aseguramos texto inicial en texto plano (no HTML)
+        timerElem.textContent = '⏳ Generando respuesta... (0.0s)';
+      }
+      messages.scrollTop = messages.scrollHeight;
+
+      // Iniciamos cronómetro sin depender de appendMessage
+      const start = performance.now();
+      let timerInterval = setInterval(() => {
+        const elapsed = (performance.now() - start) / 1000;
+        // actualizamos como texto plano para evitar conflictos con marked
+        timerElem.textContent = `⏳ Generando respuesta... (${elapsed.toFixed(1)}s)`;
+        messages.scrollTop = messages.scrollHeight;
+      }, 100);
+
+      // Placeholder para contenido que va llegando
+      const placeholder=document.createElement("div");
+      placeholder.className="msg bot";
+      placeholder.innerHTML="";
+      messages.appendChild(placeholder);
+      messages.scrollTop=messages.scrollHeight;
+
+      // streaming
+      const resp=await fetch(url,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(payload)
+      });
+      const reader=resp.body.getReader();
+      const dec=new TextDecoder();
+      let done=false,buffer="";
+      while(!done){
+        const {value,done:rdone}=await reader.read();
+        done=rdone;
+        if(value){
+          const chunk=dec.decode(value);
+          buffer+=chunk;
+          
+          // 🔹 limpieza y corrección antes de renderizar
+          const cleaned = fixBrokenNumberedLists(cleanExcessiveNewlines(buffer));
+          // ⏱ pausar un poco antes de actualizar el HTML
+          await sleep(2);
+
+          placeholder.innerHTML=marked.parse(cleaned);
+          messages.scrollTop=messages.scrollHeight;
+          
+        }
+      }
+
+      // Al terminar, detener cronómetro y fijar el texto final (no avanza más)
+      clearInterval(timerInterval);
+      const total = (performance.now() - start) / 1000;
+      timerElem.textContent = `✅ Respuesta generada en ${total.toFixed(1)}s`;
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    sendBtn.addEventListener("click",async ()=>{
+      const message=inputBox.value.trim();
+      if(!message)return;
+      const selectedCVE=munSelect.value;
+      appendMessage(message,"user");
+      inputBox.value="";
+      await streamToMessages("/api/stream/analyst",{message,cvegeo:selectedCVE,cultivo:cultivoSelect.value});
+    });
+
+    loadDropdowns();
+  </script>
+</body>
+</html>

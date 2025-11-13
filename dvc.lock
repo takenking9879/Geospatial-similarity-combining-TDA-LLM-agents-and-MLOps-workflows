@@ -1,0 +1,236 @@
+schema: '2.0'
+stages:
+  data_preprocessing_soil:
+    cmd: python3 src/suelo/data_preprocessing.py
+    deps:
+    - path: data/Division_politica/mun22gw.shp
+      hash: md5
+      md5: ac48878728d197a5c4310916da7be782
+      size: 61118020
+    - path: data/Edafologia_perfilsuelo
+      hash: md5
+      md5: 80d624e891f5db07f0e583f4b772be73.dir
+      size: 1373882320
+      nfiles: 1889
+    - path: data/Suelo_vegetacion
+      hash: md5
+      md5: efe36208577351ca35ecd3f418d94605.dir
+      size: 464192450
+      nfiles: 15
+    - path: src/suelo/data_preprocessing.py
+      hash: md5
+      md5: 141354bf096adbf39c38c12c8e393da1
+      size: 19526
+    - path: src/utils.py
+      hash: md5
+      md5: 1968dcadfb4b312f2b0594938026dc14
+      size: 3731
+    params:
+      params.yaml:
+        data_preprocessing_soil.k_neighbors: 5
+        data_preprocessing_soil.threshold_m: 20000
+    outs:
+    - path: data/processed/suelo/suelo_merged.parquet
+      hash: md5
+      md5: e30207dbdaec8fb36948db04323d8f95
+      size: 61477933
+  data_preprocessing_seeds:
+    cmd: python3 src/cultivos/data_preprocessing.py
+    deps:
+    - path: data/Sitios/Cierre_agricola_mun_2024.csv
+      hash: md5
+      md5: da11b7625413607c2eb5ced437470d4e
+      size: 6655713
+    - path: src/cultivos/data_preprocessing.py
+      hash: md5
+      md5: 36ca8fd318128cb96f8fb9b9a584e242
+      size: 7902
+    - path: src/utils.py
+      hash: md5
+      md5: 1968dcadfb4b312f2b0594938026dc14
+      size: 3731
+    params:
+      params.yaml:
+        data_preprocessing_seeds.lower_bound: 2
+    outs:
+    - path: data/processed/cultivos/evaluacion_cultivos.parquet
+      hash: md5
+      md5: 2bd517a07cc2653249284306a88e94a2
+      size: 228125
+    - path: data/processed/cultivos/municipios_principales.parquet
+      hash: md5
+      md5: 458575034d706c06c2627757c793ca11
+      size: 2074
+  data_merging_climate:
+    cmd: python3 src/clima/data_merging.py
+    deps:
+    - path: data/datos_climatologicos
+      hash: md5
+      md5: 9dd6d524d32e6fffbdcb623be131cc28.dir
+      size: 1083759099
+      nfiles: 2493
+    - path: src/clima/data_merging.py
+      hash: md5
+      md5: e913096a9b7a1e6d77aea30c3ba52e32
+      size: 6777
+    - path: src/utils.py
+      hash: md5
+      md5: 1968dcadfb4b312f2b0594938026dc14
+      size: 3731
+    params:
+      params.yaml:
+        data_merging_climate.end_date:
+        - 2024
+        - 12
+        - 31
+        data_merging_climate.start_date:
+        - 2013
+        - 1
+        - 1
+    outs:
+    - path: data/processed/clima/climatologia_todos_los_archivos.csv
+      hash: md5
+      md5: 1f8dfdd778d997e7a6911bdb061ddfd5
+      size: 110858568
+  data_cleaning_climate:
+    cmd: python3 src/clima/data_cleaning.py
+    deps:
+    - path: data/processed/clima/climatologia_todos_los_archivos.csv
+      hash: md5
+      md5: 1f8dfdd778d997e7a6911bdb061ddfd5
+      size: 110858568
+    - path: src/clima/data_cleaning.py
+      hash: md5
+      md5: e514c27e29667c48d45628db5c0f02ab
+      size: 3694
+    - path: src/utils.py
+      hash: md5
+      md5: 1968dcadfb4b312f2b0594938026dc14
+      size: 3731
+    params:
+      params.yaml:
+        data_cleaning_climate.date_limit: '2024-06-30'
+        data_cleaning_climate.method: linear
+        data_cleaning_climate.threshold: 0.4
+    outs:
+    - path: data/processed/clima/climatologia_limpio.csv
+      hash: md5
+      md5: 1aaf54ab31fa42a98cb86e0f1003c7a5
+      size: 127556022
+  data_integration_climate:
+    cmd: python3 src/clima/data_integration.py
+    deps:
+    - path: data/Division_politica/mun22gw.shp
+      hash: md5
+      md5: ac48878728d197a5c4310916da7be782
+      size: 61118020
+    - path: data/processed/clima/climatologia_limpio.csv
+      hash: md5
+      md5: 1aaf54ab31fa42a98cb86e0f1003c7a5
+      size: 127556022
+    - path: src/clima/data_integration.py
+      hash: md5
+      md5: 2b7a6d54ee488adbf60480bc0a82967d
+      size: 9235
+    - path: src/utils.py
+      hash: md5
+      md5: 1968dcadfb4b312f2b0594938026dc14
+      size: 3731
+    params:
+      params.yaml:
+        data_integration_climate.threshold_m: 20000
+    outs:
+    - path: data/processed/clima/climatologia_merged.parquet
+      hash: md5
+      md5: 19e6bc37a0a37e93ace8be2397c72eba
+      size: 59637566
+  model_building:
+    cmd: python3 src/model/model_building.py
+    deps:
+    - path: data/processed/clima/climatologia_merged.parquet
+      hash: md5
+      md5: 19e6bc37a0a37e93ace8be2397c72eba
+      size: 59637566
+    - path: data/processed/cultivos/evaluacion_cultivos.parquet
+      hash: md5
+      md5: 2bd517a07cc2653249284306a88e94a2
+      size: 228125
+    - path: data/processed/cultivos/municipios_principales.parquet
+      hash: md5
+      md5: 458575034d706c06c2627757c793ca11
+      size: 2074
+    - path: data/processed/suelo/suelo_merged.parquet
+      hash: md5
+      md5: e30207dbdaec8fb36948db04323d8f95
+      size: 61477933
+    - path: src/homology.py
+      hash: md5
+      md5: 7bd846556d564018a9da89bc81a2a304
+      size: 4945
+    - path: src/model/model_building.py
+      hash: md5
+      md5: dae19a6bc16b4a780f93dbecdbfacbe9
+      size: 12788
+    - path: src/model/model_similarity.py
+      hash: md5
+      md5: 202ed2a52ee76d7e0db0306fa8825d20
+      size: 26893
+    - path: src/utils.py
+      hash: md5
+      md5: 1968dcadfb4b312f2b0594938026dc14
+      size: 3731
+    params:
+      params.yaml:
+        model_building.candidate:
+        - 0.157
+        - 0.157
+        - 0.156
+        - 0.53
+        model_building.device: gpu
+        model_building.general_params:
+          dim: 8
+          time: 64
+          stride: 3
+        model_building.metric: wassertein
+        model_building.optimize:
+          n_initial: 1000
+          m_refine: 50
+          refine_delay: 0.9
+          seed: 42
+        model_building.params_list:
+        - embedding_dimension: 8
+          embedding_time_delay: 23
+          epsilon: 0.08
+        - embedding_dimension: 8
+          embedding_time_delay: 23
+          epsilon: 0.085
+        - embedding_dimension: 12
+          embedding_time_delay: 21
+          epsilon: 0.05
+  preprocessing_app_data:
+    cmd: python3 src/preprocess_app.py
+    deps:
+    - path: data/Division_politica/mun22gw.shp
+      hash: md5
+      md5: ac48878728d197a5c4310916da7be782
+      size: 61118020
+    - path: data/processed/cultivos/evaluacion_cultivos.parquet
+      hash: md5
+      md5: 2bd517a07cc2653249284306a88e94a2
+      size: 228125
+    - path: data/processed/suelo/suelo_merged.parquet
+      hash: md5
+      md5: e30207dbdaec8fb36948db04323d8f95
+      size: 61477933
+    - path: flask_app/results/similarity_matrix.parquet
+      hash: md5
+      md5: 8f9cc7b5bd9521cef55dde7082a30c95
+      size: 1152244
+    - path: src/preprocess_app.py
+      hash: md5
+      md5: 7763a4c45d06cbd32614cf5938c4fe80
+      size: 9499
+    - path: src/utils.py
+      hash: md5
+      md5: 1968dcadfb4b312f2b0594938026dc14
+      size: 3731

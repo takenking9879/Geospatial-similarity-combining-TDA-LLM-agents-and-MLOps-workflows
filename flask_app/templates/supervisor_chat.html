@@ -1,0 +1,310 @@
+<!-- NUEVO: templates/supervisor_chat.html -->
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Agente Revisión Documentación — RAG Municipios</title>
+  <style>
+    :root{
+      --bg:#05080c;
+      --accent:#00f0ff;
+      --muted:#98a8a8;
+    }
+    html,body{
+      height:100%;
+      margin:0;
+      background:linear-gradient(180deg,#010204,#071018);
+      color:#dffaff;
+      font-family:Inter,system-ui,Segoe UI,Roboto;
+    }
+    .wrap{
+      display:flex;
+      height:100vh;
+      padding:18px;
+      gap:18px;
+      box-sizing:border-box;
+    }
+
+    /* --- NUEVO: bordes más notorios --- */
+    .left{
+      width:540px;
+      border-radius:12px;
+      padding:12px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.008));
+      box-shadow:0 0 20px rgba(0,255,255,0.06);
+      border:1.5px solid rgba(0,255,255,0.25);
+      outline: 1px solid rgba(0,255,255,0.15);
+    }
+    .right{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      border-radius:12px;
+      padding:12px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.008));
+      border:1.5px solid rgba(0,255,255,0.18);
+      box-shadow:0 0 16px rgba(0,255,255,0.05);
+    }
+    iframe{
+      width:100%;
+      height:calc(100vh - 120px);
+      border-radius:8px;
+      border:1.5px solid rgba(0,255,255,0.25);
+      box-shadow:inset 0 0 10px rgba(0,255,255,0.08);
+    }
+
+    /* --- NUEVO: estilos mensajes con Markdown --- */
+    .messages{
+      flex:1;
+      margin-top:8px;
+      overflow:auto;
+      padding:10px;
+      border-radius:8px;
+      background:linear-gradient(180deg, rgba(0,0,0,0.03), rgba(255,255,255,0.01));
+      border:1.2px solid rgba(0,255,255,0.15);
+      box-shadow:inset 0 0 10px rgba(0,255,255,0.05);
+    }
+    .msg{
+      margin-bottom:12px;
+      padding:10px;
+      border-radius:8px;
+      max-width:90%;
+      line-height:1.5;
+    }
+    .msg.user{
+      background:linear-gradient(90deg,#05121a,#08202a);
+      border:1px solid rgba(0,255,255,0.1);
+      align-self:flex-end;
+    }
+    .msg.bot{
+      background:linear-gradient(90deg,#031018,#041827);
+      border:1px solid rgba(0,255,255,0.12);
+    }
+
+    /* 💡 Evita que se vea el tachado del Markdown ~~texto~~ */
+    .msg.bot del {
+      text-decoration: none;
+    }
+    /* Markdown básico */
+    .msg.bot p{margin:6px 0;}
+    .msg.bot code{
+      background:rgba(0,255,255,0.1);
+      padding:2px 5px;
+      border-radius:4px;
+      font-family:monospace;
+    }
+    .msg.bot pre{
+      background:rgba(0,255,255,0.06);
+      padding:8px;
+      border-radius:6px;
+      overflow-x:auto;
+    }
+    .msg.bot strong{color:#00f0ff;}
+    .msg.bot em{color:#b5eaff;}
+    .msg.bot ul{padding-left:20px;}
+    .msg.bot h1,.msg.bot h2,.msg.bot h3{margin-top:10px;color:#00f0ff;}
+
+    .inputRow{
+      display:flex;
+      gap:10px;
+      margin-top:10px;
+    }
+
+    /* --- NUEVO: hacer que el input crezca --- */
+    .inputRow input {
+      flex: 1;
+    }
+
+    input,button{
+      padding:10px;
+      border-radius:8px;
+      border:1px solid rgba(0,255,255,0.12);
+      background:transparent;
+      color:inherit;
+    }
+    button{
+      background:linear-gradient(90deg,#00e6ff,#00a8ff);
+      border:none;
+      color:#022;
+      font-weight:700;
+      cursor:pointer;
+      box-shadow:0 0 12px rgba(0,255,255,0.2);
+    }
+    button:hover{
+      box-shadow:0 0 18px rgba(0,255,255,0.35);
+      transform:translateY(-1px);
+    }
+
+    .back{
+      margin-bottom:8px;
+      color:var(--muted);
+      text-decoration:none;
+    }
+    .meta{
+      font-size:13px;
+      color:var(--muted);
+    }
+  </style>
+
+  <!-- MathJax para LaTeX -->
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+
+  <!-- NUEVO: librería Markdown (marked.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+  <div style="padding:12px;">
+    <a href="/" class="back">← Volver</a>
+  </div>
+
+  <div class="wrap">
+    <div class="left">
+      <h2>Documento: Análisis Topológico con GPU</h2>
+      <div class="meta">
+        Archivo: <strong>Análisis Topológico con GPU y Visualización Interactiva Basada en GenAI.pdf</strong>
+      </div>
+      <iframe id="pdfFrame" src="/pdf/analysis"></iframe>
+      <div style="margin-top:8px;font-size:13px;color:var(--muted)">
+        Puedes desplazarte por el PDF con la barra de desplazamiento o el ratón.
+      </div>
+    </div>
+
+    <div class="right">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <strong>Agente Revisión Documentación</strong>
+          <div style="font-size:12px;color:var(--muted)">LaTeX soportado en salida + Markdown</div>
+        </div>
+        <div><button id="clear">Limpiar</button></div>
+      </div>
+
+      <div class="messages" id="messages"></div>
+
+      <div class="inputRow">
+        <input id="inputMsg" placeholder="Pregunta sobre el documento (ej. ¿Cómo se integró la GPU?)" />
+        <button id="send">Enviar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const messages = document.getElementById("messages");
+    const inputMsg = document.getElementById("inputMsg");
+    const sendBtn = document.getElementById("send");
+    const clearBtn = document.getElementById("clear");
+
+    function appendMessageHtml(html){
+      const d = document.createElement("div");
+      d.className = "msg bot";
+      d.style.marginBottom="10px";
+      d.innerHTML = html;
+      messages.appendChild(d);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function appendUser(text){
+      const d = document.createElement("div");
+      d.className = "msg user";
+      d.style.marginBottom="10px";
+      d.textContent = text;
+      messages.appendChild(d);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    // ⏳ Función de pausa
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // --- NUEVO: usar Markdown (marked.js) y respetar saltos --- + cronómetro funcional
+    async function streamToMessages(url, payload){
+      // crear la burbuja inicial (cronómetro) usando la función existente
+      appendMessageHtml("⏳ Generando respuesta...");
+
+      // localizar la última burbuja .msg.bot para usarla como cronómetro (sin modificar appendMessageHtml)
+      let botBubbles = messages.querySelectorAll('.msg.bot');
+      let timerElem = botBubbles.length ? botBubbles[botBubbles.length - 1] : null;
+
+      // fallback: si no se encontró, crear una burbuja propia
+      if(!timerElem){
+        timerElem = document.createElement('div');
+        timerElem.className = 'msg bot';
+        timerElem.style.marginBottom = "10px";
+        timerElem.textContent = '⏳ Generando respuesta... (0.0s)';
+        messages.appendChild(timerElem);
+      } else {
+        // asegurar texto plano (evitar innerHTML con marked)
+        timerElem.textContent = '⏳ Generando respuesta... (0.0s)';
+      }
+      messages.scrollTop = messages.scrollHeight;
+
+      // iniciar cronómetro
+      const start = performance.now();
+      let timerInterval = setInterval(() => {
+        const elapsed = (performance.now() - start) / 1000;
+        timerElem.textContent = `⏳ Generando respuesta... (${elapsed.toFixed(1)}s)`;
+        messages.scrollTop = messages.scrollHeight;
+      }, 100);
+
+      // placeholder para contenido que llega
+      const placeholder = document.createElement("div");
+      placeholder.className = "msg bot";
+      placeholder.style.marginBottom="10px";
+      placeholder.innerHTML = "";
+      messages.appendChild(placeholder);
+      messages.scrollTop = messages.scrollHeight;
+
+      // streaming
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(payload)
+      });
+      const reader = resp.body.getReader();
+      const dec = new TextDecoder();
+      let done=false;
+      let buffer="";
+      while(!done){
+        const {value, done: rdone} = await reader.read();
+        done = rdone;
+        if(value){
+          const chunk = dec.decode(value);
+          buffer += chunk;
+
+          // ⏱ pausar un poco antes de actualizar el HTML
+          await sleep(2);
+
+          // Render Markdown dinámicamente
+          placeholder.innerHTML = marked.parse(buffer);
+          messages.scrollTop = messages.scrollHeight;
+
+          // Render LaTeX si existe
+          if(window.MathJax && window.MathJax.typesetPromise){
+            window.MathJax.typesetPromise([placeholder]).catch((e)=>console.warn(e));
+          }
+        }
+      }
+
+      // al terminar, detener cronómetro y fijar texto final
+      clearInterval(timerInterval);
+      const total = (performance.now() - start) / 1000;
+      timerElem.textContent = `✅ Respuesta generada en ${total.toFixed(1)}s`;
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    sendBtn.addEventListener("click", async ()=>{
+      const text = inputMsg.value.trim();
+      if(!text) return;
+      appendUser(text);
+      inputMsg.value="";
+      await streamToMessages("/api/stream/supervisor", {message: text});
+    });
+
+    clearBtn.addEventListener("click", ()=>{ messages.innerHTML=""; });
+  </script>
+</body>
+</html>

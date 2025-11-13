@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "TDAGenAI"
+version = "0.1.0"
+description = "Package for TDA + GenAI project"
+authors = [
+  { name = "Jorge Angel Manzanares Cortes", email = "projorge.15@gmail.com" }
+]
+readme = "README.md"
+license = { text = "MIT" }
+keywords = ["TDA", "MLOps", "LLM", "LangChain", "AI Agents", "Topology"]
+requires-python = ">=3.11"
+
+dependencies = [
+    "numpy",
+    "pandas",
+    "geopandas",
+    "shapely",
+    "scikit-learn",
+    "scipy",
+    "giotto-tda",
+    "langchain",
+    "dvc",
+    "python-dotenv",
+    "matplotlib",
+    "seaborn"
+]

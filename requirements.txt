@@ -1,0 +1,54 @@
+# TDA libraries
+giotto-tda==0.6.2
+/home/jorge/ripser-plusplus
+
+# Base libraries
+ipykernel==6.29.5
+requests==2.32.5
+gower==0.1.2
+numpy==1.26.4
+pandas==2.2.2
+geopandas==1.1.1 
+shapely==2.1.1
+plotly==5.24.1
+scikit-learn==1.3.2
+scipy==1.15.3
+joblib==1.5.1 
+tqdm==4.67.1
+tqdm-joblib==0.0.5
+numba==0.61.2
+PyYAML==6.0.2
+matplotlib==3.10.6
+seaborn==0.13.2
+pyarrow==22.0.0
+# Amazon
+boto3==1.40.67
+
+# LLM libraries
+langchain==1.0.3
+sentence-transformers==5.1.2
+pypdf==6.1.3
+python-dotenv==1.2.1
+langchain-pinecone==0.2.13 
+langchain-openai==1.0.2
+langchain-community==0.4.1
+langchain-huggingface==1.0.1
+langgraph==1.0.2
+langsmith==0.4.41
+crewai==1.3.0
+faiss-cpu==1.12.0
+langchain-mcp-adapters==0.1.12
+mcp==1.21.0
+ddgs==9.8.0
+# MLOPS libraries
+dvc==3.63.0
+
+# App libraries
+flask==3.1.2
+gunicorn==23.0.0
+
+# MCP
+uv==0.9.7
+mcp-use==1.4.0
+
+-e .
