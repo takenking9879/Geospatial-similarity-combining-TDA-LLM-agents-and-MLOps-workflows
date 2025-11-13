@@ -198,7 +198,7 @@ $$
 D_{\mathrm{tda}}^{(v)} \in \mathbb{R}^{1630 \times 123}, \qquad v\in\{\mathrm{Tmax},\mathrm{Tmin},\mathrm{Precip}\}.
 $$
 
-Cada \(D_{\mathrm{tda}}^{(v)}\) se normalizó por columna (Min–Max).
+Cada $$\(D_{\mathrm{tda}}^{(v)}\)$$ se normalizó por columna (Min–Max).
 
 ---
 
@@ -223,7 +223,7 @@ $$
 
 donde \(\circ\) indica producto elemento a elemento (Hadamard).  
 
-4. Re-normalizar por columna → matrices finales \(D_{\mathrm{tmax}}, D_{\mathrm{tmin}}, D_{\mathrm{precip}}\).
+4. Re-normalizar por columna → matrices finales $$\(D_{\mathrm{tmax}}, D_{\mathrm{tmin}}, D_{\mathrm{precip}}\)$$.
 
 **Justificación:**  
 TDA captura estructura; la diferencia de magnitud evita que ciclos iguales con niveles distintos sean equiparados. El Hadamard asegura contribución conjunta.
@@ -267,18 +267,18 @@ S_{ij} =
 \end{cases}
 $$
 
-La confianza por par se define como
+La confianza por par se define como:
 
 $$
 \mathrm{Conf}_{ij} = 1 - \big\lvert D_{ij} - S_{ij} \big\rvert,
 \qquad \mathrm{Conf}_{ij} \in [0,1].
 $$
 
-- Confianza por objetivo \(j\): promedio de \(\mathrm{Conf}_{ij}\) sobre todos los candidatos \(i\) con \(K_{ij}>0\).  
+- Confianza por objetivo \(j\): promedio de $$\(\mathrm{Conf}_{ij}\)$$ sobre todos los candidatos \(i\) con \(K_{ij}>0\).  
 - Confianza general: promedio global de confianzas por objetivo.
 
 **Optimización de pesos:**  
-Se generaron **1000 combinaciones aleatorias** (con \(\sum_k w_k = 1\)) y se refinó localmente el mejor candidato. El refinamiento no cambió sustancialmente la solución (estable).
+Se generaron **1000 combinaciones aleatorias** (con $$\(\sum_k w_k = 1\)$$) y se refinó localmente el mejor candidato. El refinamiento no cambió sustancialmente la solución (estable).
 
 ---
 
