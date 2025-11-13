@@ -274,8 +274,8 @@ $$
 \qquad \mathrm{Conf}_{ij} \in [0,1].
 $$
 
-- Confianza por objetivo \(j\): promedio de $$\(\mathrm{Conf}_{ij}\) sobre todos los candidatos \(i\) con \(K_{ij}>0\).  
-- Confianza general: promedio global de confianzas por objetivo.
+- Confianza por objetivo \(j\): promedio de \(\mathrm{Conf}_{ij}\) sobre todos los candidatos \(i\) con \(K_{ij} > 0\).  
+- Confianza general: promedio global de las confianzas por objetivo.
 
 **Optimización de pesos:**  
 Se generaron **1000 combinaciones aleatorias** (con $$\(\sum_k w_k = 1\)$$) y se refinó localmente el mejor candidato. El refinamiento no cambió sustancialmente la solución (estable).
@@ -374,16 +374,14 @@ Un sistema de **agentes colaborativos (multi-agente)** que asisten al usuario en
 
 Un entorno que combina **lectura y asistencia inteligente**.
 
-<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; margin-bottom: 30px;">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 30px; margin-bottom: 30px;">
 
-  <figure style="flex: 1 1 300px; text-align: center; min-width: 250px;">
+  <figure style="text-align: center; min-width: 250px;">
     <img src="images/respuesta_sobre_documentacion.png" alt="Documentación" style="width: 100%; max-width: 400px;">
     <figcaption><i>Figura 3. Respuesta sobre documentación</i></figcaption>
   </figure>
 
-<br>
-
-  <figure style="flex: 1 1 300px; text-align: center; min-width: 250px;">
+  <figure style="text-align: center; min-width: 250px;">
     <img src="images/respuesta_sobre_homologia.png" alt="Homología" style="width: 100%; max-width: 400px;">
     <figcaption><i>Figura 4. Respuesta sobre homología</i></figcaption>
   </figure>
