@@ -5,6 +5,8 @@
 [![Python](https://img.shields.io/badge/Python-3.11-blue?logo=python)](https://www.python.org/)
 [![DVC](https://img.shields.io/badge/DVC-Reproducibility-success?logo=dvc)](https://dvc.org/)
 [![LangChain](https://img.shields.io/badge/LangChain-RAG_Pipeline-00aaff?logo=chainlink)](https://www.langchain.com/)
+[![Flask](https://img.shields.io/badge/Flask-2.3-lightgrey?logo=flask&logoColor=000000)](https://flask.palletsprojects.com/)
+[![Docker](https://img.shields.io/badge/Docker-24.0-blue?logo=docker)](https://www.docker.com/)
 [![AWS](https://img.shields.io/badge/AWS-EC2_|_ECR-orange?logo=amazon-aws)](https://aws.amazon.com/)
 [![Terraform](https://img.shields.io/badge/Terraform-Infrastructure--as--Code-623CE4?logo=terraform)](https://www.terraform.io/)
 [![Ripser++](https://img.shields.io/badge/Ripser++-TDA_GPU-green)](https://github.com/Ripser/ripser)
@@ -114,10 +116,9 @@ El umbral del 40 % equilibra retención y calidad; la interpolación suaviza hue
 
 Para cada combinación municipio × cultivo se calculó la media de los registros de producción, evitando sesgos por diferencias en área cultivada.
 
-**Índice continuo de productividad:**
-\[
-\text{Index}_{\text{prod}} = \frac{(\text{Rendimiento} \times \text{Cosechada}) - \text{Siniestrada}}{\text{Sembrada}}
-\]
+**Índice continuo de productividad:**  
+![Index_prod](https://latex.codecogs.com/svg.image?\text{Index}_{\text{prod}}=\frac{(\text{Rendimiento}\times\text{Cosechada})-\text{Siniestrada}}{\text{Sembrada}})
+
 El índice se normaliza por cultivo y posteriormente se discretiza en **6 categorías ordinales**:
 
 | Categoría | Descripción |
@@ -155,11 +156,9 @@ Comparar los 1630 × 1630 diagramas sería inviable; reducir a 123 mantiene foco
 
 ## 🔬 Modelo y Evaluación
 
-### Distancias de suelo (Gower)
-Se calculó la distancia de **Gower** entre los 1 630 candidatos y los 123 objetivos, generando:
-\[
-D_{\text{gower}} \in \mathbb{R}^{1630 \times 123}
-\]
+### Distancias de suelo (Gower)  
+Se calculó la distancia de **Gower** entre los 1 630 candidatos y los 123 objetivos, generando:  
+![D_gower](https://latex.codecogs.com/svg.image?D_{\text{gower}}\in\mathbb{R}^{1630\times123})  
 Cada columna (municipio objetivo) se normalizó por **Min–Max** a [0,1].
 
 **Justificación:**  
@@ -184,7 +183,8 @@ Para cada variable climática (Tmax, Tmin, Precip) se ejecutó:
 - **Precip:** `delay=21`, `dim=12`, `ε=0.05`
 
 Salida: diagramas de persistencia para 1630 candidatos × 123 objetivos.  
-Se calculó la **distancia de Wasserstein** entre diagramas → matrices \(D_{tda}^{(v)} \in \mathbb{R}^{1630 \times 123}\) por variable \(v\). Cada \(D_{tda}^{(v)}\) se normalizó por columna (Min–Max).
+Se calculó la **distancia de Wasserstein** entre diagramas → matrices  
+![D_tda](https://latex.codecogs.com/svg.image?D_{tda}^{(v)}\in\mathbb{R}^{1630\times123}) por variable \(v\). Cada \(D_{tda}^{(v)}\) se normalizó por columna (Min–Max).
 
 **Justificación:**  
 Takens captura la dinámica (ciclos/recurrencias); PCA controla dimensionalidad; Wasserstein es sensible a forma y persistencia.
@@ -196,16 +196,12 @@ Takens captura la dinámica (ciclos/recurrencias); PCA controla dimensionalidad;
 Procedimiento por variable climática \(v\):
 
 1. Calcular la **media temporal 2013–2024** por municipio (magnitud física).  
-2. Construir matriz de **diferencias absolutas de magnitud**:
-   \[
-   D_{\text{diff}}^{(v)} \in \mathbb{R}^{1630\times123}
-   \]
+2. Construir matriz de **diferencias absolutas de magnitud**:  
+   ![D_diff](https://latex.codecogs.com/svg.image?D_{\text{diff}}^{(v)}\in\mathbb{R}^{1630\times123})  
    Normalizar por columna (Min–Max).  
-3. Combinar topología y magnitud por **producto de Hadamard**:
-   \[
-   D_{\text{had}}^{(v)} = D_{tda}^{(v)} \circ D_{\text{diff}}^{(v)}
-   \]
-4. Re-normalizar por columna → matrices finales \(D_{tmax}, D_{tmin}, D_{precip}\).
+3. Combinar topología y magnitud por **producto de Hadamard**:  
+   ![D_had](https://latex.codecogs.com/svg.image?D_{\text{had}}^{(v)}=D_{tda}^{(v)}\circ D_{\text{diff}}^{(v)})  
+4. Re-normalizar por columna → matrices finales ![D_tmax](https://latex.codecogs.com/svg.image?D_{tmax}), ![D_tmin](https://latex.codecogs.com/svg.image?D_{tmin}), ![D_precip](https://latex.codecogs.com/svg.image?D_{precip}).
 
 **Justificación:**  
 TDA captura estructura; la diferencia de magnitud evita que ciclos iguales con niveles distintos sean equiparados. El Hadamard asegura contribución conjunta.
@@ -216,10 +212,10 @@ TDA captura estructura; la diferencia de magnitud evita que ciclos iguales con n
 
 Para cada par (i candidato, j objetivo):
 
-\[
-D_{ij} = w_1 D_{tmax,ij} + w_2 D_{tmin,ij} + w_3 D_{precip,ij} + w_4 D_{gower,ij}
-\]
-sujeto a \(\sum_{k=1}^4 w_k = 1\).  
+![D_ij](https://latex.codecogs.com/svg.image?D_{ij}=w_1D_{tmax,ij}+w_2D_{tmin,ij}+w_3D_{precip,ij}+w_4D_{gower,ij})
+
+sujeto a  
+![sum_w](https://latex.codecogs.com/svg.image?\sum_{k=1}^4w_k=1).  
 Cada \(D\) fue normalizada previamente por columna (Min–Max). El índice final no se normaliza (ponderación garantiza comparabilidad).
 
 ---
@@ -232,20 +228,11 @@ Para cada par (i,j):
 - \(K_{ij}\): número de cultivos compartidos.  
 - Para cada cultivo \(k\) compartido, etiquetas discretizadas \(C_{ik}, C_{jk}\in\{1,\dots,5\}\).
 
-Definición de similitud empírica:
-\[
-S_{ij} = 
-\begin{cases}
-\frac{1}{K_{ij}} \sum_{k\in compartidos} \left( \frac{4 - |C_{ik}-C_{jk}|}{4} \right) & K_{ij} > 0\\
-\text{NaN}_{,k_{ij}=0} & K_{ij} = 0
-\end{cases}
-\]
+Definición de similitud empírica:  
+![S_ij](https://latex.codecogs.com/svg.image?S_{ij}=%5Cbegin%7Bcases%7D%20%5Cfrac%7B1%7D%7BK_{ij}%7D%5Csum_%7Bk%5Cin%20compartidos%7D%20%5Cleft(%20%5Cfrac%7B4-%7C C_{ik}-C_{jk}%7C%7D%7B4%7D%20%5Cright)%20%26%20K_{ij}>0%5C%5C%20%5Ctext%7BNaN%7D_%7B%2Ck_%7Bij%7D%3D0%7D%20%26%20K_{ij}=0%20%5Cend%7Bcases%7D)
 
-Confianza por par:
-\[
-\text{Conf}_{ij} = 1 - |D_{ij} - S_{ij}|
-\quad \text{con } \text{Conf}_{ij}\in[0,1]
-\]
+Confianza por par:  
+![Conf_ij](https://latex.codecogs.com/svg.image?%5Ctext%7BConf%7D_{ij}=1-%7C D_{ij}-S_{ij}%7C%20%5Cquad%20%5Ctext%7Bcon%20%7D%20%5Ctext%7BConf%7D_{ij}%5Cin%5B0%2C1%5D)
 
 - Confianza por objetivo \(j\): promedio de \(\text{Conf}_{ij}\) sobre todos los candidatos \(i\).  
 - Confianza general: promedio global de confianzas por objetivo.
@@ -289,6 +276,138 @@ Se generaron **1000 combinaciones aleatorias** (con \(\sum w_k = 1\)) y se refin
 **Interpretación:**  
 La mayor contribución proviene del componente **suelo (~49%)**, seguido por **precipitación (~35%)**; las temperaturas Tmax (~9%) y Tmin (~6%) influyen menos. Esto sugiere que condiciones del suelo y patrones de precipitación son principales determinantes de similitud productiva entre municipios.
 
+---
+
+## 🧭 Estructura general de la aplicación
+
+La aplicación cuenta con **tres pestañas principales**, cada una enfocada en una parte distinta del análisis y la interacción con los modelos.
+
+---
+
+### 🗺️ **1. Mapa de similitud geoespacial**
+
+Muestra un **mapa interactivo de México** dividido por municipios.
+
+<p align="center">
+  <img src="images/mapa_mexico.png" alt="Mapa de Calor México" width="80%">
+  <br>
+  <i>Figura 1. Mapa interactivo coloreado por índice de similitud.</i>
+</p>
+
+- Inicialmente los polígonos municipales están **transparentes**.  
+- El usuario elige un municipio en el **menú desplegable** (dropdown).  
+- Al seleccionar un municipio:
+  - El municipio elegido se **marca en negro**.
+  - Todos los demás municipios se **colorean automáticamente** según su **valor de similitud** con el municipio seleccionado (calculado por el modelo), y los que no tienen datos se mantienen **transparentes**.  
+  - Al **hacer clic en un municipio**, el mapa **hace zoom** y lo **resalta en morado**.
+- Un panel adicional muestra una **tabla con los cinco municipios más similares** al seleccionado, incluyendo:
+  - El valor de similitud, el de confianza y su ranking en el score (similitud × confianza).
+  - Un **enlace** que centra el mapa en dicho municipio al hacer clic.
+- Al **pasar el cursor** sobre un municipio:
+  - Se muestra la **similitud del modelo**.
+  - La **similitud empírica (confianza)** derivada del **índice agrícola real** (calculado a partir de producción, rendimiento y valor económico).
+
+> 💡 En conjunto, esta pestaña permite visualizar la coherencia entre el modelo de similitud y los datos agrícolas reales, además de explorar relaciones espaciales entre municipios.
+
+---
+
+### 🤖 **2. Agente de recomendación**
+
+Un sistema de **agentes colaborativos (multi-agente)** que asisten al usuario en la exploración y generación de ideas.
+
+<p align="center">
+  <img src="images/respuesta_analista.png" alt="Analista" width="75%">
+  <br>
+  <i>Figura 2. Ejemplo de interacción con el agente analista.</i>
+</p>
+
+- **Agente 1:** Reformula el prompt del usuario para hacerlo más claro y efectivo para que las herramientas puedan usarse.  
+- **Agente 2:** Responde con **recomendaciones prácticas**, tales como:
+  - Municipios similares donde podría replicarse un cultivo.
+  - Cultivos potenciales para un municipio específico.
+  - Zonas donde **ya se cultiva** cierta especie.
+- Permite explorar escenarios y obtener sugerencias fundamentadas en los datos modelados.
+
+---
+
+### 📘 **3. Documentación interactiva**
+
+Un entorno que combina **lectura y asistencia inteligente**.
+
+<p align="center">
+  <figure style="display:inline-block; margin:10px; text-align:center;">
+    <img src="images/respuesta_sobre_documentacion.png" alt="Documentación" width="45%">
+    <br>
+    <figcaption><i>Figura 3. Respuesta sobre documentación</i></figcaption>
+  </figure>
+  <figure style="display:inline-block; margin:10px; text-align:center;">
+    <img src="images/respuesta_sobre_homologia.png" alt="Homología" width="45%">
+    <br>
+    <figcaption><i>Figura 4. Respuesta sobre homología</i></figcaption>
+  </figure>
+</p>
+
+- A la **izquierda** se muestra el **PDF de la documentación completa** (la documentación del proyecto).  
+- A la **derecha** se ubica un **agente explicativo**, capaz de:
+  - Responder preguntas sobre la documentación.
+  - Aclarar conceptos matemáticos, técnicos o metodológicos.
+  - Generar ejemplos y resúmenes en lenguaje natural.
+
+> 🧠 Esta vista convierte la documentación estática en un entorno de aprendizaje y consulta interactiva.
+
+---
+
+## 🧩 Conjunto de Herramientas Inteligentes (Tools)
+
+El sistema cuenta con dos agentes principales — **Analista** y **Supervisor** — cada uno con su propio conjunto de herramientas registradas como `@tool`, diseñadas para exploración geoespacial, recomendaciones agrícolas y comprensión de la documentación.
+
+---
+
+### 🤖 **Agente Analista**
+
+Herramientas enfocadas en análisis agroambiental, recomendación de cultivos y comparación entre municipios.
+
+| Tool | Descripción |
+|------|--------------|
+| `recomendar_municipios_por_cultivo` | Dado un cultivo, identifica **nuevos municipios potenciales** para su siembra y compara con los actuales productores. Calcula un *score = similitud × confianza*. |
+| `recomendar_cultivos_por_municipio` | Dado un municipio, sugiere **nuevos cultivos prometedores** basados en municipios similares y sus prácticas agrícolas. |
+| `cultivos_comunes` | Compara dos municipios y devuelve **los cultivos que comparten**, junto con su rendimiento y diferencia de desempeño. |
+| `top_municipios_cultivo` | Devuelve los **N municipios con mayor valor** para un cultivo específico. |
+| `top_cultivos_municipio` | Devuelve los **N cultivos principales** de un municipio según su índice de productividad. |
+
+> 🧠 Estas herramientas permiten al agente identificar patrones agrícolas, sugerir cultivos viables y explorar relaciones entre municipios desde una perspectiva de similitud estructural y empírica.
+
+---
+
+### 🧭 **Supervisor (Documentación y Recuperación de Contexto)**
+
+Herramientas enfocadas en acceso a documentación técnica, búsqueda en la web y soporte multiagente MCP.
+
+| Tool | Descripción |
+|------|--------------|
+| `retrieve_context` | Recupera pasajes relevantes desde la **documentación interna o PDFs** usando embeddings semánticos. Ideal para preguntas sobre la implementación. |
+| `duckduckgo_search` | Realiza búsquedas generales en la web mediante **DuckDuckGo**, limitando a los 3 resultados más relevantes. |
+| `context_retriever` | Usa el **agente de contexto** para responder preguntas técnicas basadas en la documentación del proyecto. |
+| `web_retriever` | Usa el **agente web** (con Tavily, DuckDuckGo o Wikipedia MCP)** para obtener información externa. |
+
+> 🔗 El supervisor puede combinar fuentes locales (documentación interna) con externas (web, Wikipedia, Tavily MCP), logrando respuestas híbridas y trazables.
+
+---
+
+### ⚙️ Integración Multiagente
+
+El proyecto utiliza **MCP (Model Context Protocol)** para coordinar agentes y orígenes de información externos:
+
+```python
+client = MultiServerMCPClient({
+    "tavily": {
+        "transport": "streamable_http",
+        "url": "https://mcp.tavily.com/mcp",
+        "headers": {"Authorization": f"Bearer {TAVILY_API_KEY}"}
+    }
+})
+tools_mcp = await client.get_tools()
+```
 ---
 
 ## 🧑‍💻 Autor
