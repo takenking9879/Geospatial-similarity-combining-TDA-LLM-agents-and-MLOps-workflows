@@ -117,9 +117,11 @@ El umbral del 40 % equilibra retención y calidad; la interpolación suaviza hue
 Para cada combinación municipio × cultivo se calculó la media de los registros de producción, evitando sesgos por diferencias en área cultivada.
 
 **Índice continuo de productividad:**  
-<p align="center">
-<img src="https://latex.codecogs.com/svg.image?\text{Index}_{\text{prod}}=\frac{(\text{Rendimiento}\times\text{Cosechada})-\text{Siniestrada}}{\text{Sembrada}}" alt="Index_prod">
-</p>
+
+$$
+\mathrm{Index}_{\mathrm{prod}}
+= \frac{(\mathrm{Rendimiento}\times \mathrm{Cosechada}) - \mathrm{Siniestrada}}{\mathrm{Sembrada}}
+$$
 
 El índice se normaliza por cultivo y posteriormente se discretiza en **6 categorías ordinales**:
 
@@ -160,13 +162,13 @@ Comparar los 1630 × 1630 diagramas sería inviable; reducir a 123 mantiene foco
 ## 🔬 Modelo y Evaluación
 
 ### Distancias de suelo (Gower)  
-Se calculó la distancia de **Gower** entre los 1 630 candidatos y los 123 objetivos, generando:  
+Se calculó la distancia de **Gower** entre los 1 630 candidatos y los 123 objetivos, generando la matriz
 
-<p align="center">
-<img src="https://latex.codecogs.com/svg.image?D_{\text{gower}}\in\mathbb{R}^{1630\times123}" alt="D_gower">
-</p>
+$$
+D_{\mathrm{gower}} \in \mathbb{R}^{1630 \times 123}.
+$$
 
-Cada columna (municipio objetivo) se normalizó por **Min–Max** a [0,1].
+Cada columna (municipio objetivo) se normalizó por **Min–Max** a \([0,1]\).
 
 **Justificación:**  
 Gower maneja variables mixtas (numéricas y categóricas) y es robusta para características edafológicas y uso de suelo.
@@ -185,18 +187,18 @@ Para cada variable climática (Tmax, Tmin, Precip) se ejecutó:
 
 **Parámetros finales (balance costo/detalle):**
 - `stride = 3` → reduce ~4199 → ≈1400 puntos.  
-- **Tmax:** `delay=23`, `dim=8`, `ε=0.08`  
-- **Tmin:** `delay=23`, `dim=8`, `ε=0.085`  
-- **Precip:** `delay=21`, `dim=12`, `ε=0.05`
+- **Tmax:** `delay=23`, `dim=8`, `\varepsilon=0.08`  
+- **Tmin:** `delay=23`, `dim=8`, `\varepsilon=0.085`  
+- **Precip:** `delay=21`, `dim=12`, `\varepsilon=0.05`
 
 Salida: diagramas de persistencia para 1630 candidatos × 123 objetivos.  
-Se calculó la **distancia de Wasserstein** entre diagramas → matrices  
+Se calculó la **distancia de Wasserstein** entre diagramas, obteniendo matrices
 
-<p align="center">
-<img src="https://latex.codecogs.com/svg.image?D_{tda}^{(v)}\in\mathbb{R}^{1630\times123}" alt="D_tda">
-</p>
+$$
+D_{\mathrm{tda}}^{(v)} \in \mathbb{R}^{1630 \times 123}, \qquad v\in\{\mathrm{Tmax},\mathrm{Tmin},\mathrm{Precip}\}.
+$$
 
-Cada \(D_{tda}^{(v)}\) se normalizó por columna (Min–Max).
+Cada \(D_{\mathrm{tda}}^{(v)}\) se normalizó por columna (Min–Max).
 
 ---
 
@@ -205,21 +207,23 @@ Cada \(D_{tda}^{(v)}\) se normalizó por columna (Min–Max).
 Procedimiento por variable climática \(v\):
 
 1. Calcular la **media temporal 2013–2024** por municipio (magnitud física).  
-2. Construir matriz de **diferencias absolutas de magnitud**:  
+2. Construir matriz de **diferencias absolutas de magnitud**:
 
-<p align="center">
-<img src="https://latex.codecogs.com/svg.image?D_{\text{diff}}^{(v)}\in\mathbb{R}^{1630\times123}" alt="D_diff">
-</p>
+$$
+D_{\mathrm{diff}}^{(v)} \in \mathbb{R}^{1630 \times 123}.
+$$
 
 Normalizar por columna (Min–Max).  
 
-3. Combinar topología y magnitud por **producto de Hadamard**:  
+3. Combinar topología y magnitud por **producto de Hadamard**:
 
-<p align="center">
-<img src="https://latex.codecogs.com/svg.image?D_{\text{had}}^{(v)}=D_{tda}^{(v)}\circ D_{\text{diff}}^{(v)}" alt="D_had">
-</p>
+$$
+D_{\mathrm{had}}^{(v)} = D_{\mathrm{tda}}^{(v)} \circ D_{\mathrm{diff}}^{(v)},
+$$
 
-4. Re-normalizar por columna → matrices finales: ![D_tmax](https://latex.codecogs.com/svg.image?D_{tmax}), ![D_tmin](https://latex.codecogs.com/svg.image?D_{tmin}), ![D_precip](https://latex.codecogs.com/svg.image?D_{precip}).
+donde \(\circ\) indica producto elemento a elemento (Hadamard).  
+
+4. Re-normalizar por columna → matrices finales \(D_{\mathrm{tmax}}, D_{\mathrm{tmin}}, D_{\mathrm{precip}}\).
 
 **Justificación:**  
 TDA captura estructura; la diferencia de magnitud evita que ciclos iguales con niveles distintos sean equiparados. El Hadamard asegura contribución conjunta.
@@ -228,19 +232,19 @@ TDA captura estructura; la diferencia de magnitud evita que ciclos iguales con n
 
 ### Índice final de similitud (combinación ponderada)
 
-Para cada par (i candidato, j objetivo):
+Para cada par (i candidato, j objetivo) definimos:
 
-<p align="center">
-<img src="https://latex.codecogs.com/svg.image?D_{ij}=w_1D_{tmax,ij}+w_2D_{tmin,ij}+w_3D_{precip,ij}+w_4D_{gower,ij}" alt="D_ij">
-</p>
+$$
+D_{ij} = w_1\,D_{\mathrm{tmax},ij} + w_2\,D_{\mathrm{tmin},ij} + w_3\,D_{\mathrm{precip},ij} + w_4\,D_{\mathrm{gower},ij},
+$$
 
-sujeto a  
+sujeto a la restricción de pesos
 
-<p align="center">
-<img src="https://latex.codecogs.com/svg.image?\sum_{k=1}^4w_k=1" alt="sum_w">
-</p>
+$$
+\sum_{k=1}^{4} w_k = 1, \qquad w_k \ge 0.
+$$
 
-Cada \(D\) fue normalizada previamente por columna (Min–Max). El índice final no se normaliza (ponderación garantiza comparabilidad).
+Cada componente \(D\) fue normalizada previamente por columna (Min–Max). El índice final no se renormaliza adicionalmente (la ponderación garantiza comparabilidad relativa).
 
 ---
 
@@ -248,27 +252,33 @@ Cada \(D\) fue normalizada previamente por columna (Min–Max). El índice final
 
 Comparación entre predicción \(D_{ij}\) y similitud empírica \(S_{ij}\) derivada de rendimientos agrícolas.
 
-Para cada par (i,j):
+Para cada par \((i,j)\):
 - \(K_{ij}\): número de cultivos compartidos.  
 - Para cada cultivo \(k\) compartido, etiquetas discretizadas \(C_{ik}, C_{jk}\in\{1,\dots,5\}\).
 
-Definición de similitud empírica:  
+Definimos la similitud empírica como
 
-<p align="center">
-<img src="https://latex.codecogs.com/svg.image?S_{ij}=\begin{cases} \frac{1}{K_{ij}}\sum_{k\in compartidos} \left( \frac{4-| C_{ik}-C_{jk}|}{4} \right) & K_{ij}>0\\ \text{NaN}_{,k_{ij}=0} & K_{ij}=0 \end{cases}" alt="S_ij">
-</p>
+$$
+S_{ij} =
+\begin{cases}
+\displaystyle
+\frac{1}{K_{ij}} \sum_{k \in \text{compartidos}} \left( \frac{4 - \lvert C_{ik} - C_{jk}\rvert}{4} \right), & K_{ij} > 0,\\[8pt]
+\mathrm{NaN}, & K_{ij} = 0.
+\end{cases}
+$$
 
-Confianza por par:  
+La confianza por par se define como
 
-<p align="center">
-<img src="https://latex.codecogs.com/svg.image?\text{Conf}_{ij}=1-| D_{ij}-S_{ij}| \quad \text{con } \text{Conf}_{ij}\in[0,1]" alt="Conf_ij">
-</p>
+$$
+\mathrm{Conf}_{ij} = 1 - \big\lvert D_{ij} - S_{ij} \big\rvert,
+\qquad \mathrm{Conf}_{ij} \in [0,1].
+$$
 
-- Confianza por objetivo \(j\): promedio de \(\text{Conf}_{ij}\) sobre todos los candidatos \(i\).  
+- Confianza por objetivo \(j\): promedio de \(\mathrm{Conf}_{ij}\) sobre todos los candidatos \(i\) con \(K_{ij}>0\).  
 - Confianza general: promedio global de confianzas por objetivo.
 
 **Optimización de pesos:**  
-Se generaron **1000 combinaciones aleatorias** (con \(\sum w_k = 1\)) y se refinó localmente el mejor candidato. El refinamiento no cambió sustancialmente la solución (estable).
+Se generaron **1000 combinaciones aleatorias** (con \(\sum_k w_k = 1\)) y se refinó localmente el mejor candidato. El refinamiento no cambió sustancialmente la solución (estable).
 
 ---
 
