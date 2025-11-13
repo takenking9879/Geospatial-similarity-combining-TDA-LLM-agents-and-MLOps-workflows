@@ -256,13 +256,13 @@ Para cada par \((i,j)\):
 - \(K_{ij}\): número de cultivos compartidos.  
 - Para cada cultivo \(k\) compartido, etiquetas discretizadas \(C_{ik}, C_{jk}\in\{1,\dots,5\}\).
 
-Definimos la similitud empírica como
+Definimos la similitud empírica como:
 
 $$
 S_{ij} =
 \begin{cases}
 \displaystyle
-\frac{1}{K_{ij}} \sum_{k \in \text{compartidos}} \left( \frac{4 - \lvert C_{ik} - C_{jk}\rvert}{4} \right), & K_{ij} > 0,\\[8pt]
+\frac{1}{K_{ij}} \sum_{k \in \mathcal{C}_{ij}} \frac{4 - | C_{ik} - C_{jk} |}{4}, & K_{ij} > 0,\\[2ex]
 \mathrm{NaN}, & K_{ij} = 0.
 \end{cases}
 $$
@@ -374,7 +374,7 @@ Un sistema de **agentes colaborativos (multi-agente)** que asisten al usuario en
 
 Un entorno que combina **lectura y asistencia inteligente**.
 
-<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 20px;">
+<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; margin-bottom: 30px;">
 
   <figure style="flex: 1 1 300px; text-align: center; min-width: 250px;">
     <img src="images/respuesta_sobre_documentacion.png" alt="Documentación" style="width: 100%; max-width: 400px;">
