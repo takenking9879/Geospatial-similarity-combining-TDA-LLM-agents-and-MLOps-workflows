@@ -262,7 +262,7 @@ $$
 S_{ij} =
 \begin{cases}
 \displaystyle
-\frac{1}{K_{ij}} \sum_{k \in \mathcal{C}_{ij}} \frac{4 - | C_{ik} - C_{jk} |}{4}, & K_{ij} > 0,\\[2ex]
+\frac{1}{K_{ij}} \sum_{k \in \mathcal{C}_{ij}} \frac{4 - | C_{ik} - C_{jk} |}{4}, & K_{ij} > 0,\
 \mathrm{NaN}, & K_{ij} = 0.
 \end{cases}
 $$
@@ -274,7 +274,7 @@ $$
 \qquad \mathrm{Conf}_{ij} \in [0,1].
 $$
 
-- Confianza por objetivo \(j\): promedio de $$\(\mathrm{Conf}_{ij}\)$$ sobre todos los candidatos \(i\) con \(K_{ij}>0\).  
+- Confianza por objetivo \(j\): promedio de $$\(\mathrm{Conf}_{ij}\) sobre todos los candidatos \(i\) con \(K_{ij}>0\).  
 - Confianza general: promedio global de confianzas por objetivo.
 
 **Optimización de pesos:**  
@@ -381,12 +381,16 @@ Un entorno que combina **lectura y asistencia inteligente**.
     <figcaption><i>Figura 3. Respuesta sobre documentación</i></figcaption>
   </figure>
 
+<br>
+
   <figure style="flex: 1 1 300px; text-align: center; min-width: 250px;">
     <img src="images/respuesta_sobre_homologia.png" alt="Homología" style="width: 100%; max-width: 400px;">
     <figcaption><i>Figura 4. Respuesta sobre homología</i></figcaption>
   </figure>
 
 </div>
+
+<br>
 
 - A la **izquierda** se muestra el **PDF de la documentación completa** del proyecto.  
 - A la **derecha** se ubica un **agente explicativo**, capaz de:
