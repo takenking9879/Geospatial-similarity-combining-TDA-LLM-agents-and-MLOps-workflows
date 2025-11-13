@@ -455,6 +455,6 @@ tools_mcp = await client.get_tools()
 ## 🧑‍💻 Autor
 
 **Jorge Ángel Manzanares Cortés**  
-🌐 [[Enlace a portafolio o GitHub si lo deseas](https://github.com/takenking9879)]
+🌐 [[Github](https://github.com/takenking9879)]
 
 ---
