@@ -117,7 +117,9 @@ El umbral del 40 % equilibra retención y calidad; la interpolación suaviza hue
 Para cada combinación municipio × cultivo se calculó la media de los registros de producción, evitando sesgos por diferencias en área cultivada.
 
 **Índice continuo de productividad:**  
-![Index_prod](https://latex.codecogs.com/svg.image?\text{Index}_{\text{prod}}=\frac{(\text{Rendimiento}\times\text{Cosechada})-\text{Siniestrada}}{\text{Sembrada}})
+<p align="center">
+<img src="https://latex.codecogs.com/svg.image?\text{Index}_{\text{prod}}=\frac{(\text{Rendimiento}\times\text{Cosechada})-\text{Siniestrada}}{\text{Sembrada}}" alt="Index_prod">
+</p>
 
 El índice se normaliza por cultivo y posteriormente se discretiza en **6 categorías ordinales**:
 
@@ -141,6 +143,7 @@ El promedio evita confundir municipios extensos con mejores condiciones intríns
 ### Selección de municipios “interesantes”
 
 Proceso jerárquico:
+
 1. Municipios con categoría **Excelente (5)** en al menos un cultivo → **619** municipios.  
 2. Retener municipios Excelente en ≥ 3 cultivos → **152** municipios.  
 3. Intersección con municipios con datos completos de suelo, clima y evaluación → **123** municipios finales de interés.
@@ -158,7 +161,11 @@ Comparar los 1630 × 1630 diagramas sería inviable; reducir a 123 mantiene foco
 
 ### Distancias de suelo (Gower)  
 Se calculó la distancia de **Gower** entre los 1 630 candidatos y los 123 objetivos, generando:  
-![D_gower](https://latex.codecogs.com/svg.image?D_{\text{gower}}\in\mathbb{R}^{1630\times123})  
+
+<p align="center">
+<img src="https://latex.codecogs.com/svg.image?D_{\text{gower}}\in\mathbb{R}^{1630\times123}" alt="D_gower">
+</p>
+
 Cada columna (municipio objetivo) se normalizó por **Min–Max** a [0,1].
 
 **Justificación:**  
@@ -184,10 +191,12 @@ Para cada variable climática (Tmax, Tmin, Precip) se ejecutó:
 
 Salida: diagramas de persistencia para 1630 candidatos × 123 objetivos.  
 Se calculó la **distancia de Wasserstein** entre diagramas → matrices  
-![D_tda](https://latex.codecogs.com/svg.image?D_{tda}^{(v)}\in\mathbb{R}^{1630\times123}) por variable \(v\). Cada \(D_{tda}^{(v)}\) se normalizó por columna (Min–Max).
 
-**Justificación:**  
-Takens captura la dinámica (ciclos/recurrencias); PCA controla dimensionalidad; Wasserstein es sensible a forma y persistencia.
+<p align="center">
+<img src="https://latex.codecogs.com/svg.image?D_{tda}^{(v)}\in\mathbb{R}^{1630\times123}" alt="D_tda">
+</p>
+
+Cada \(D_{tda}^{(v)}\) se normalizó por columna (Min–Max).
 
 ---
 
@@ -197,11 +206,20 @@ Procedimiento por variable climática \(v\):
 
 1. Calcular la **media temporal 2013–2024** por municipio (magnitud física).  
 2. Construir matriz de **diferencias absolutas de magnitud**:  
-   ![D_diff](https://latex.codecogs.com/svg.image?D_{\text{diff}}^{(v)}\in\mathbb{R}^{1630\times123})  
-   Normalizar por columna (Min–Max).  
+
+<p align="center">
+<img src="https://latex.codecogs.com/svg.image?D_{\text{diff}}^{(v)}\in\mathbb{R}^{1630\times123}" alt="D_diff">
+</p>
+
+Normalizar por columna (Min–Max).  
+
 3. Combinar topología y magnitud por **producto de Hadamard**:  
-   ![D_had](https://latex.codecogs.com/svg.image?D_{\text{had}}^{(v)}=D_{tda}^{(v)}\circ D_{\text{diff}}^{(v)})  
-4. Re-normalizar por columna → matrices finales ![D_tmax](https://latex.codecogs.com/svg.image?D_{tmax}), ![D_tmin](https://latex.codecogs.com/svg.image?D_{tmin}), ![D_precip](https://latex.codecogs.com/svg.image?D_{precip}).
+
+<p align="center">
+<img src="https://latex.codecogs.com/svg.image?D_{\text{had}}^{(v)}=D_{tda}^{(v)}\circ D_{\text{diff}}^{(v)}" alt="D_had">
+</p>
+
+4. Re-normalizar por columna → matrices finales: ![D_tmax](https://latex.codecogs.com/svg.image?D_{tmax}), ![D_tmin](https://latex.codecogs.com/svg.image?D_{tmin}), ![D_precip](https://latex.codecogs.com/svg.image?D_{precip}).
 
 **Justificación:**  
 TDA captura estructura; la diferencia de magnitud evita que ciclos iguales con niveles distintos sean equiparados. El Hadamard asegura contribución conjunta.
@@ -212,10 +230,16 @@ TDA captura estructura; la diferencia de magnitud evita que ciclos iguales con n
 
 Para cada par (i candidato, j objetivo):
 
-![D_ij](https://latex.codecogs.com/svg.image?D_{ij}=w_1D_{tmax,ij}+w_2D_{tmin,ij}+w_3D_{precip,ij}+w_4D_{gower,ij})
+<p align="center">
+<img src="https://latex.codecogs.com/svg.image?D_{ij}=w_1D_{tmax,ij}+w_2D_{tmin,ij}+w_3D_{precip,ij}+w_4D_{gower,ij}" alt="D_ij">
+</p>
 
 sujeto a  
-![sum_w](https://latex.codecogs.com/svg.image?\sum_{k=1}^4w_k=1).  
+
+<p align="center">
+<img src="https://latex.codecogs.com/svg.image?\sum_{k=1}^4w_k=1" alt="sum_w">
+</p>
+
 Cada \(D\) fue normalizada previamente por columna (Min–Max). El índice final no se normaliza (ponderación garantiza comparabilidad).
 
 ---
@@ -229,10 +253,16 @@ Para cada par (i,j):
 - Para cada cultivo \(k\) compartido, etiquetas discretizadas \(C_{ik}, C_{jk}\in\{1,\dots,5\}\).
 
 Definición de similitud empírica:  
-![S_ij](https://latex.codecogs.com/svg.image?S_{ij}=%5Cbegin%7Bcases%7D%20%5Cfrac%7B1%7D%7BK_{ij}%7D%5Csum_%7Bk%5Cin%20compartidos%7D%20%5Cleft(%20%5Cfrac%7B4-%7C C_{ik}-C_{jk}%7C%7D%7B4%7D%20%5Cright)%20%26%20K_{ij}>0%5C%5C%20%5Ctext%7BNaN%7D_%7B%2Ck_%7Bij%7D%3D0%7D%20%26%20K_{ij}=0%20%5Cend%7Bcases%7D)
+
+<p align="center">
+<img src="https://latex.codecogs.com/svg.image?S_{ij}=\begin{cases} \frac{1}{K_{ij}}\sum_{k\in compartidos} \left( \frac{4-| C_{ik}-C_{jk}|}{4} \right) & K_{ij}>0\\ \text{NaN}_{,k_{ij}=0} & K_{ij}=0 \end{cases}" alt="S_ij">
+</p>
 
 Confianza por par:  
-![Conf_ij](https://latex.codecogs.com/svg.image?%5Ctext%7BConf%7D_{ij}=1-%7C D_{ij}-S_{ij}%7C%20%5Cquad%20%5Ctext%7Bcon%20%7D%20%5Ctext%7BConf%7D_{ij}%5Cin%5B0%2C1%5D)
+
+<p align="center">
+<img src="https://latex.codecogs.com/svg.image?\text{Conf}_{ij}=1-| D_{ij}-S_{ij}| \quad \text{con } \text{Conf}_{ij}\in[0,1]" alt="Conf_ij">
+</p>
 
 - Confianza por objetivo \(j\): promedio de \(\text{Conf}_{ij}\) sobre todos los candidatos \(i\).  
 - Confianza general: promedio global de confianzas por objetivo.
@@ -330,31 +360,31 @@ Un sistema de **agentes colaborativos (multi-agente)** que asisten al usuario en
 
 ---
 
-### 📘 **3. Documentación interactiva**
+### 📘 3. Documentación interactiva
 
 Un entorno que combina **lectura y asistencia inteligente**.
 
-<p align="center">
-  <figure style="display:inline-block; margin:10px; text-align:center;">
-    <img src="images/respuesta_sobre_documentacion.png" alt="Documentación" width="45%">
-    <br>
+<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 20px;">
+
+  <figure style="flex: 1 1 300px; text-align: center; min-width: 250px;">
+    <img src="images/respuesta_sobre_documentacion.png" alt="Documentación" style="width: 100%; max-width: 400px;">
     <figcaption><i>Figura 3. Respuesta sobre documentación</i></figcaption>
   </figure>
-  <figure style="display:inline-block; margin:10px; text-align:center;">
-    <img src="images/respuesta_sobre_homologia.png" alt="Homología" width="45%">
-    <br>
+
+  <figure style="flex: 1 1 300px; text-align: center; min-width: 250px;">
+    <img src="images/respuesta_sobre_homologia.png" alt="Homología" style="width: 100%; max-width: 400px;">
     <figcaption><i>Figura 4. Respuesta sobre homología</i></figcaption>
   </figure>
-</p>
 
-- A la **izquierda** se muestra el **PDF de la documentación completa** (la documentación del proyecto).  
+</div>
+
+- A la **izquierda** se muestra el **PDF de la documentación completa** del proyecto.  
 - A la **derecha** se ubica un **agente explicativo**, capaz de:
   - Responder preguntas sobre la documentación.
   - Aclarar conceptos matemáticos, técnicos o metodológicos.
   - Generar ejemplos y resúmenes en lenguaje natural.
 
 > 🧠 Esta vista convierte la documentación estática en un entorno de aprendizaje y consulta interactiva.
-
 ---
 
 ## 🧩 Conjunto de Herramientas Inteligentes (Tools)
