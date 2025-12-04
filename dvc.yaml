@@ -80,6 +80,8 @@ stages:
       - model_building.candidate
       - model_building.device
       - model_building.optimize
+    outs:
+      - output_aux/aux_model_building.txt
   
   preprocessing_app_data:
     cmd: python3 src/preprocess_app.py
@@ -90,5 +92,6 @@ stages:
     - data/Division_politica/mun22gw.shp
     - data/processed/suelo/suelo_merged.parquet
     - data/processed/cultivos/evaluacion_cultivos.parquet
+    - output_aux/aux_model_building.txt
 
 

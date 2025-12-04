@@ -14,6 +14,39 @@ class DataCleaningClimate(BaseUtils):
         self.output_dir = output_dir
         self.params = self.load_params()["data_cleaning_climate"]
 
+    def average_out_n_days(self, df, start_col:int, window:int):
+        """
+        Promedia cada 'window' columnas de una serie de tiempo.
+        
+        df: DataFrame original
+        start_col: índice de la columna donde inician los días (7 = columnas 0-6 son metadata)
+        window: tamaño de la ventana (3 = cada 3 días)
+        
+        Return:
+            nuevo DataFrame con promedios agrupados
+        """
+        # Copia columnas fijas (metadatos)
+        meta = df.iloc[:, :start_col]
+
+        # Extrae la parte de serie de tiempo
+        ts = df.iloc[:, start_col:]
+
+        # Número total de columnas de la serie de tiempo
+        n = ts.shape[1]
+
+        # Número de bloques de tamaño 'window'
+        num_blocks = n // window
+        averaged_blocks = []
+
+        for i in range(num_blocks):
+            block = ts.iloc[:, i*window : (i+1)*window]
+            averaged = block.mean(axis=1)
+            averaged_blocks.append(averaged.rename(f"avg_{i+1}"))
+
+        # Concatenar metadata + promedios
+        result = pd.concat([meta] + averaged_blocks, axis=1)
+        return result
+
     def cleaning(self):
         os.makedirs(self.output_dir, exist_ok=True)
         try:
@@ -52,6 +85,7 @@ class DataCleaningClimate(BaseUtils):
             columnas_finales = df.columns[:7].tolist() + fecha_cols_limitadas
             df_limpio = df_limpio[columnas_finales]
 
+            df_limpio = self.average_out_n_days(df_limpio, start_col=7, window=self.params.get('average_n_days', 3))
             df_limpio.to_csv(output_path, index=False)
             self.logger.info(f"Archivo limpio guardado en: {output_path}")
         except Exception as e:

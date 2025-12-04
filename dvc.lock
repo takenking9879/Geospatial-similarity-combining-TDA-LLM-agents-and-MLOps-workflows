@@ -43,24 +43,24 @@ stages:
       size: 6655713
     - path: src/cultivos/data_preprocessing.py
       hash: md5
-      md5: 36ca8fd318128cb96f8fb9b9a584e242
-      size: 7902
+      md5: 6293c060bc1c0404c282761144bbd435
+      size: 7364
     - path: src/utils.py
       hash: md5
       md5: 1968dcadfb4b312f2b0594938026dc14
       size: 3731
     params:
       params.yaml:
-        data_preprocessing_seeds.lower_bound: 2
+        data_preprocessing_seeds.lower_bound: 0.8
     outs:
     - path: data/processed/cultivos/evaluacion_cultivos.parquet
       hash: md5
-      md5: 2bd517a07cc2653249284306a88e94a2
-      size: 228125
+      md5: 834d11f586df0cac5be31830c8b730e1
+      size: 373237
     - path: data/processed/cultivos/municipios_principales.parquet
       hash: md5
-      md5: 458575034d706c06c2627757c793ca11
-      size: 2074
+      md5: 365630138b593cd950128f4ef3f9253a
+      size: 2465
   data_merging_climate:
     cmd: python3 src/clima/data_merging.py
     deps:
@@ -101,8 +101,8 @@ stages:
       size: 110858568
     - path: src/clima/data_cleaning.py
       hash: md5
-      md5: e514c27e29667c48d45628db5c0f02ab
-      size: 3694
+      md5: c2dc9f0e234da414c5eb3939f1f23a77
+      size: 4921
     - path: src/utils.py
       hash: md5
       md5: 1968dcadfb4b312f2b0594938026dc14
@@ -115,8 +115,8 @@ stages:
     outs:
     - path: data/processed/clima/climatologia_limpio.csv
       hash: md5
-      md5: 1aaf54ab31fa42a98cb86e0f1003c7a5
-      size: 127556022
+      md5: 3f09844b0268235156060a83e4f6bd35
+      size: 64402144
   data_integration_climate:
     cmd: python3 src/clima/data_integration.py
     deps:
@@ -126,8 +126,8 @@ stages:
       size: 61118020
     - path: data/processed/clima/climatologia_limpio.csv
       hash: md5
-      md5: 1aaf54ab31fa42a98cb86e0f1003c7a5
-      size: 127556022
+      md5: 3f09844b0268235156060a83e4f6bd35
+      size: 64402144
     - path: src/clima/data_integration.py
       hash: md5
       md5: 2b7a6d54ee488adbf60480bc0a82967d
@@ -142,23 +142,23 @@ stages:
     outs:
     - path: data/processed/clima/climatologia_merged.parquet
       hash: md5
-      md5: 19e6bc37a0a37e93ace8be2397c72eba
-      size: 59637566
+      md5: 160f094683bacd4275d28c29c7866b08
+      size: 24106888
   model_building:
     cmd: python3 src/model/model_building.py
     deps:
     - path: data/processed/clima/climatologia_merged.parquet
       hash: md5
-      md5: 19e6bc37a0a37e93ace8be2397c72eba
-      size: 59637566
+      md5: 160f094683bacd4275d28c29c7866b08
+      size: 24106888
     - path: data/processed/cultivos/evaluacion_cultivos.parquet
       hash: md5
-      md5: 2bd517a07cc2653249284306a88e94a2
-      size: 228125
+      md5: 834d11f586df0cac5be31830c8b730e1
+      size: 373237
     - path: data/processed/cultivos/municipios_principales.parquet
       hash: md5
-      md5: 458575034d706c06c2627757c793ca11
-      size: 2074
+      md5: 365630138b593cd950128f4ef3f9253a
+      size: 2465
     - path: data/processed/suelo/suelo_merged.parquet
       hash: md5
       md5: e30207dbdaec8fb36948db04323d8f95
@@ -169,12 +169,12 @@ stages:
       size: 4945
     - path: src/model/model_building.py
       hash: md5
-      md5: dae19a6bc16b4a780f93dbecdbfacbe9
-      size: 12788
+      md5: 0be93ab202f1c9642c6ac2b13a7989ab
+      size: 13323
     - path: src/model/model_similarity.py
       hash: md5
-      md5: 202ed2a52ee76d7e0db0306fa8825d20
-      size: 26893
+      md5: 34bc4aca62afe2265702309f0360ae55
+      size: 28122
     - path: src/utils.py
       hash: md5
       md5: 1968dcadfb4b312f2b0594938026dc14
@@ -182,31 +182,37 @@ stages:
     params:
       params.yaml:
         model_building.candidate:
-        - 0.157
-        - 0.157
-        - 0.156
-        - 0.53
+        - 0.1
+        - 0.15
+        - 0.4
+        - 0.35
         model_building.device: gpu
         model_building.general_params:
           dim: 8
-          time: 64
-          stride: 3
-        model_building.metric: wassertein
+          time: 32
+          stride: 1
+        model_building.metric: wasserstein
         model_building.optimize:
-          n_initial: 1000
-          m_refine: 50
+          n_initial: 2000
+          m_refine: 30
           refine_delay: 0.9
           seed: 42
+          parameters_type: fixed
         model_building.params_list:
-        - embedding_dimension: 8
-          embedding_time_delay: 23
-          epsilon: 0.08
-        - embedding_dimension: 8
-          embedding_time_delay: 23
-          epsilon: 0.085
-        - embedding_dimension: 12
-          embedding_time_delay: 21
-          epsilon: 0.05
+        - embedding_dimension: 7
+          embedding_time_delay: 28
+          epsilon: 0.07
+        - embedding_dimension: 7
+          embedding_time_delay: 29
+          epsilon: 0.075
+        - embedding_dimension: 14
+          embedding_time_delay: 33
+          epsilon: 0.04
+    outs:
+    - path: output_aux/aux_model_building.txt
+      hash: md5
+      md5: d8ebd14807470165da1ce72420723619
+      size: 78
   preprocessing_app_data:
     cmd: python3 src/preprocess_app.py
     deps:
@@ -216,16 +222,20 @@ stages:
       size: 61118020
     - path: data/processed/cultivos/evaluacion_cultivos.parquet
       hash: md5
-      md5: 2bd517a07cc2653249284306a88e94a2
-      size: 228125
+      md5: 834d11f586df0cac5be31830c8b730e1
+      size: 373237
     - path: data/processed/suelo/suelo_merged.parquet
       hash: md5
       md5: e30207dbdaec8fb36948db04323d8f95
       size: 61477933
     - path: flask_app/results/similarity_matrix.parquet
       hash: md5
-      md5: 8f9cc7b5bd9521cef55dde7082a30c95
-      size: 1152244
+      md5: 5f55286fc7ca024c22e2acfb9047cf05
+      size: 1579422
+    - path: output_aux/aux_model_building.txt
+      hash: md5
+      md5: d8ebd14807470165da1ce72420723619
+      size: 78
     - path: src/preprocess_app.py
       hash: md5
       md5: 7763a4c45d06cbd32614cf5938c4fe80

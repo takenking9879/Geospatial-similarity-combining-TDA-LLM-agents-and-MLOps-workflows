@@ -163,24 +163,24 @@ class ModelBuilding(BaseUtils):
             # ------------------ Crear clase TDA ------------------
             self.general_params = self.params["general_params"]
             dimension = self.general_params.get("dim", 8) #General con todas 8, 64, 3
-            time_delay = self.general_params.get("time", 64)
-            stride = self.general_params.get("stride", 3)
+            time_delay = self.general_params.get("time", 32)
+            stride = self.general_params.get("stride", 1)
             similarity = TDA_similarity(root = self.root,
                 serie_cols=serie_cols,
                 embedding_dimension=dimension,
                 embedding_time_delay=time_delay,
                 stride=stride,
                 metric=self.params.get("metric", "wasserstein"),
-                weights=self.params.get("candidate", [0.157, 0.157,0.156, 0.53]),
-                device = self.params.get("device", "cpu") #[0.47, 0.53]
+                weights=self.params.get("candidate", [0.1, 0.15, 0.4, 0.35]),
+                device = self.params.get("device", "gpu") #[0.47, 0.53]
                 ) #metric = 'bottleneck'
 
             # ------------------ Calcular similitud ------------------
             #Particular Tmax 8, 23, 0.08, Tmin 8, 23, 0.085. Precipitación 12, 21, 0.05
             new_params_list = self.params.get("params_list", [
-            {"embedding_dimension": 8, "embedding_time_delay": 23, "epsilon": 0.08},   # Tmax
-            {"embedding_dimension": 8, "embedding_time_delay": 23, "epsilon": 0.085},  # Tmin
-            {"embedding_dimension": 12, "embedding_time_delay": 21, "epsilon": 0.05}   # Precip
+            {"embedding_dimension": 7, "embedding_time_delay": 28, "epsilon": 0.07},   # Tmax
+            {"embedding_dimension": 7, "embedding_time_delay": 29, "epsilon": 0.075},  # Tmin
+            {"embedding_dimension": 14, "embedding_time_delay": 33, "epsilon": 0.04}   # Precip
             ])
 
             similarity.get_tda_gower_matrices(
@@ -195,7 +195,7 @@ class ModelBuilding(BaseUtils):
                 )
             optimize = self.params["optimize"]
             D = similarity.similarity_index_evaluation(df_evaluacion=df_evaluacion,confianza_path=self.confianza_path,
-                                                       parameters_type='search', n_initial=optimize.get("n_initial", 1000),
+                                                       parameters_type=optimize.get('parameters_type','search'), n_initial=optimize.get("n_initial", 1000),
                                                        m_refine=optimize.get("m_refine", 50), refine_decay=optimize.get("refine_decay", 0.9),
                                                        seed = optimize.get("seed", 42))
             return D
@@ -227,6 +227,18 @@ def main():
         D = building.model_data()
         D.to_parquet(similarity_matrix_path, index=True)
         building.logger.info("✅ Matriz de similitud evaluada y guardada.")
+        
+        # --- ruta del output auxiliar ---
+        aux_output_dir = os.path.join(root_dir, "output_aux")
+        aux_output_path = os.path.join(aux_output_dir, 'aux_model_building.txt')
+        # crear carpeta si no existe
+        os.makedirs(aux_output_dir, exist_ok=True)
+
+        # escribir algo simple en el archivo
+        with open(aux_output_path, "w") as f:
+            f.write("Proceso de preprocesamiento completado.\n")
+            f.write(f"Timestamp: {pd.Timestamp.now()}\n")
+        
     except Exception as e:
         building.logger.error(f"Failed to complete the model building pipeline {e}")
 if __name__ == "__main__":

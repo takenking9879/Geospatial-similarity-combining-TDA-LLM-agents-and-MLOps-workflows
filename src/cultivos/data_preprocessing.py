@@ -14,14 +14,20 @@ class DataPreprocessingSeeds(BaseUtils):
         self.sitios_path = sitios_path
         self.output_path = output_path
         self.params = self.load_params()["data_preprocessing_seeds"]
-        self.final = None
+        self.lower_bound = self.params.get('lower_bound', 0.8)
+        self.evaluation_metric = self.params.get('evaluation_metric') + '_promedio'
+        self.list_generation_metric = self.params.get('list_generation_metric') + '_promedio'
 
-    def evaluation_df(self) -> None:
+    def metric_df(self, base_metric: str = None) -> None | pd.DataFrame:
         os.makedirs(self.output_path, exist_ok=True)  # exist_ok=True evita error si ya existe
         try:
-                
+            base_metric_initial = base_metric
+            if base_metric == None: #Se asegura que solo usando metric_df uses la metrica que quieres y se puede reutilizar el codigo xd
+                base_metric = self.evaluation_metric
+                base_metric_initial = None
+            
             df = pd.read_csv(self.sitios_path,encoding='latin-1')
-            df.drop(columns=['Idddr','Nomddr','Idcader','Nomcader','Idciclo','Idmodalidad','Idunidadmedida','Volumenproduccion','Preciomediorural'],inplace=True)
+            df.drop(columns=['Idddr','Nomddr','Idcader','Nomcader','Idciclo','Idmodalidad','Idunidadmedida','Preciomediorural'],inplace=True)
 
             df['Rendimiento'] = np.where(
                 (df['Rendimiento'].isna()) & (df['Cosechada'] == 0),
@@ -40,13 +46,15 @@ class DataPreprocessingSeeds(BaseUtils):
                     Sembrada_total=('Sembrada','sum'),
                     Cosechada_total=('Cosechada','sum'),
                     Siniestrada_total=('Siniestrada','sum'),
-                    Rendimiento_promedio=('Rendimiento','mean')
+                    Rendimiento_promedio=('Rendimiento','mean'),
+                    Valorproduccion_promedio=('Valorproduccion', 'mean'),
+                    Volumenproduccion_promedio=('Volumenproduccion', 'mean')
                 ).reset_index()
 
                 # Calcular índice productivo
                 indice_df['Indice_productivo'] = np.where(
                     indice_df['Sembrada_total'] > 0,
-                    indice_df['Rendimiento_promedio'] * (indice_df['Cosechada_total'] - indice_df['Siniestrada_total']) / indice_df['Sembrada_total'],
+                    indice_df[base_metric] * (indice_df['Cosechada_total'] - indice_df['Siniestrada_total']) / indice_df['Sembrada_total'],
                     0
                 )
 
@@ -56,11 +64,9 @@ class DataPreprocessingSeeds(BaseUtils):
                 # Normalizar dentro del cultivo
                 mi, ma = indice_df['Indice_productivo'].min(), indice_df['Indice_productivo'].max()
                 indice_df['Indice_norm'] = (indice_df['Indice_productivo'] - mi) / (ma - mi) if ma > mi else 0.0
-                bins = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]  # 5 rangos
-                labels = ['Muy Malo', 'Malo', 'Regular', 'Bueno', 'Excelente']
 
                 # Asignar etiqueta a cada municipio
-                indice_df['Etiqueta'] = pd.cut(indice_df['Indice_norm'], bins=bins, labels=labels, include_lowest=True)
+                indice_df['Etiqueta'] = indice_df['Indice_norm']
                 # Ordenar por índice normalizado
                 indice_df.sort_values(by='Indice_norm', ascending=False, inplace=True)
 
@@ -89,63 +95,40 @@ class DataPreprocessingSeeds(BaseUtils):
             df_final.sort_values(by=['CVEGEO'], inplace=True)
             df_final.reset_index(drop=True, inplace=True)
 
-            mapeo = {
-                'Muy Malo': 1,
-                'Malo': 2,
-                'Regular': 3,
-                'Bueno': 4,
-                'Excelente': 5
-            }
-
-            df_final = df_final.map(lambda x: mapeo.get(x, x))
-            df_final.fillna(0, inplace=True)
-
             # Me quedo con el df_final justo aqui, pero hay que hacer downcast
             df_final = self.downcast_numeric(df_final)
-            output_evaluaciones_path = os.path.join(self.output_path, "evaluacion_cultivos.parquet")
-            df_final.to_parquet(output_evaluaciones_path, index=False)
-            self.df_final = df_final
+            if base_metric_initial == None:
+                output_evaluaciones_path = os.path.join(self.output_path, "evaluacion_cultivos.parquet")
+                df_final.to_parquet(output_evaluaciones_path, index=False)
+            else:
+                return df_final
 
         except Exception as e:
             raise self.logger.error(f"Hubo un error al crear el df de evaluación {e}")
 
-
-
     def key_municipalities(self) -> None:
-        os.makedirs(self.output_path, exist_ok=True)  # exist_ok=True evita error si ya existe
+        os.makedirs(self.output_path, exist_ok=True)
         try:
-            if self.df_final is None:
+            # Obtener el df con métricas por Valorproduccion
+            df_final = self.metric_df(base_metric=self.list_generation_metric)
+
+            if df_final is None or df_final.empty:
                 raise ValueError("No existe el df de evaluación")
-            bueno_excelente_per_municipio = []
 
-            # Iterate over rows of df_final
-            for index, row in self.df_final.iterrows():
-                # Select columns excluding 'Idestado' and 'Idmunicipio'
-                cultivo_ratings = row.drop(['Idestado', 'Idmunicipio'])
+            # Columnas de cultivos (excluyendo Idestado, Idmunicipio y CVEGEO)
+            cultivo_cols = [c for c in df_final.columns if c not in ['Idestado', 'Idmunicipio', 'CVEGEO']]
 
-                # Count 'Bueno' and 'Excelente' in the row
-                count = cultivo_ratings[(cultivo_ratings == 5)].count()
-                #(cultivo_ratings == 'Bueno') |
-                # Store the count along with state and municipality IDs
-                bueno_excelente_per_municipio.append({
-                    'CVEGEO': row['CVEGEO'],
-                    'Idestado': row['Idestado'],
-                    'Idmunicipio': row['Idmunicipio'],
-                    'Count': count
-                })
+            # Filtrar municipios con al menos un cultivo >= lower_bound
+            df_filtered = df_final[(df_final[cultivo_cols] >= self.lower_bound).any(axis=1)][['CVEGEO']].copy()
 
-            # Create a DataFrame from the results
-            df_bueno_excelente_per_municipio = pd.DataFrame(bueno_excelente_per_municipio)
-            df_filtered = df_bueno_excelente_per_municipio[df_bueno_excelente_per_municipio['Count'] > self.params.get("lower_bound", 2)].copy()
-
-            df_filtered.drop(columns=['Idestado', 'Idmunicipio', 'Count'], inplace=True)
-
-            # Me quedo con la lista de CVEGEO que son interesantes, hacemos downcast la guardamos como df
+            # Guardar parquet
             df_filtered = self.downcast_numeric(df_filtered)
             output_principales_path = os.path.join(self.output_path, "municipios_principales.parquet")
             df_filtered.to_parquet(output_principales_path, index=False)
+
         except Exception as e:
             self.logger.error(f"Hubo un fallo en la obtención de los municipios principales {e}")
+            raise
 
 def main():
     try:
@@ -157,7 +140,7 @@ def main():
         preprocessing = DataPreprocessingSeeds(params_path=params_path,
                                                sitios_path=sitios_path,
                                                output_path=output_path)
-        preprocessing.evaluation_df()
+        preprocessing.metric_df()
         preprocessing.key_municipalities()
     except Exception as e:
         raise preprocessing.logger.error(f"Failed to complete the data preprocessing pipeline {e}")

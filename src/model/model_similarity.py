@@ -281,10 +281,11 @@ class TDA_similarity(BaseUtils):
         """
         Calcula S_cultivos a partir de self.df_evaluacion y lo guarda en self.s_cultivos.
         También guarda el orden de los municipios en self.cvegeo_index.
+        Ahora considera NaN como ausencia de datos.
         """
         cultivos = self.df_evaluacion.columns[3:]
         cultivos_df = self.df_evaluacion.set_index("CVEGEO")[cultivos]
-        
+
         # Guardar el orden de CVEGEOS
         self.cvegeo_index = cultivos_df.index.to_list()
 
@@ -293,14 +294,16 @@ class TDA_similarity(BaseUtils):
 
         shared_counts = np.zeros((n_rows, n_rows), dtype=np.int32)
         sum_abs_diff = np.zeros((n_rows, n_rows), dtype=np.float32)
-        mask_A = (A != 0.0)
+
+        # mask_A: True si hay dato, False si es NaN
+        mask_A = ~np.isnan(A)
 
         for k in range(n_cultivos):
             a_k = A[:, k]
             ma = mask_A[:, k]
             if not ma.any():
                 continue
-            # Outer boolean mask
+            # Outer boolean mask: True si ambos tienen dato
             shared_k = np.outer(ma.astype(np.uint8), ma.astype(np.uint8)).astype(bool)
             if not shared_k.any():
                 continue
@@ -310,7 +313,7 @@ class TDA_similarity(BaseUtils):
 
         S_cultivos = np.full((n_rows, n_rows), np.nan, dtype=np.float32)
         nonzero_mask = shared_counts > 0
-        S_cultivos[nonzero_mask] = 1.0 - (sum_abs_diff[nonzero_mask] / (4.0 * shared_counts[nonzero_mask]))
+        S_cultivos[nonzero_mask] = 1.0 - (sum_abs_diff[nonzero_mask] / shared_counts[nonzero_mask])
 
         self.s_cultivos = S_cultivos
 
@@ -322,7 +325,7 @@ class TDA_similarity(BaseUtils):
         """
         # ---- checks mínimos ----
         if not hasattr(self, "s_cultivos") or self.s_cultivos is None:
-            raise RuntimeError("self.s_cultivos no está calculado. Llama a calcular_s_cultivos() primero.")
+            raise RuntimeError("self.s_cultivos no está calculado. Llama a seed_similarity() primero.")
         if not hasattr(self, "cvegeo_index") or self.cvegeo_index is None:
             raise RuntimeError("self.cvegeo_index no está disponible. Debe guardarse cuando se calcule s_cultivos.")
 
@@ -357,15 +360,29 @@ class TDA_similarity(BaseUtils):
         # construir DataFrame resultante con mismos índices/columnas que D
         confianza_df = pd.DataFrame(confianza, index=D.index, columns=D.columns)
 
-        # estadísticas (por columna / municipio objetivo)
+        # estadísticas (por columna / municipio objetivo) usando la matriz completa
         confianza_stats = confianza_df.agg(['mean', 'std', 'min', 'max'], axis=0)
         confianza_stats_percent = confianza_stats * 100
 
-        # promedio general (sobre columnas) en porcentaje
-        general_stats = confianza_stats_percent.mean(axis=1)
-        self.logger.info(f"\nRendimiento general del modelo (%):\n{general_stats}")
+        # ---- Promedio general ignorando comparaciones fila=columna ----
+        # Creamos una máscara (n_rows x n_cols) donde True indica fila_id == col_id
+        same_id_mask = np.equal.outer(np.array(D.index.tolist(), dtype=object),
+                                    np.array(D.columns.tolist(), dtype=object))
 
-        # guardar en porcentaje si corresponde
+        # Copia temporal de S_for_D donde ponemos NaN en las comparaciones fila=columna
+        S_for_D_temp = S_for_D.copy()
+        S_for_D_temp[same_id_mask] = np.nan
+
+        # Recalcular confianza temporal y sus estadísticas
+        S_diff_temp = np.abs(D_vals - S_for_D_temp)
+        confianza_temp = 1.0 - S_diff_temp
+
+        confianza_temp_df = pd.DataFrame(confianza_temp, columns=D.columns, index=D.index)
+        confianza_stats_percent_temp = confianza_temp_df.agg(['mean', 'std', 'min', 'max'], axis=0) * 100
+        general_stats = confianza_stats_percent_temp.mean(axis=1)
+        self.logger.info(f"\nRendimiento general del modelo (%), ignorando comparaciones fila=columna:\n{general_stats}")
+
+        # ---- DataFrame final que se guarda (sin ignorar fila=columna) ----
         confianza_df_percent = confianza_df * 100
         confianza_df_percent = self.downcast_numeric(confianza_df_percent)
         if getattr(self, "confianza_path", None) is not None:
@@ -375,48 +392,50 @@ class TDA_similarity(BaseUtils):
                 self.logger.error(f"No se pudo guardar confianza_df_percent en parquet: {e}")
 
         return confianza_df_percent
-    
+
     def evaluar_modelo(self, D: pd.DataFrame) -> float:
         """
-        Versión liviana que reutiliza self.s_cultivos (precalculado).
-        Devuelve un float: el promedio (ignorando NaN) de la matriz de 'confianza'
-        calculada sobre las filas y columnas de D.
+        Calcula el promedio general exactamente igual que evaluar_modelo_allstats:
+        primero ignora comparaciones fila=columna, luego calcula confianza, luego
+        media por columna, finalmente promedio de esas medias, en porcentaje.
         """
-        # ---- checks mínimos ----
         if not hasattr(self, "s_cultivos") or self.s_cultivos is None:
-            raise RuntimeError("self.s_cultivos no está calculado. Llama a calcular_s_cultivos() primero.")
+            raise RuntimeError("self.s_cultivos no está calculado. Llama a seed_similarity() primero.")
         if not hasattr(self, "cvegeo_index") or self.cvegeo_index is None:
             raise RuntimeError("self.cvegeo_index no está disponible. Debe guardarse cuando se calcule s_cultivos.")
 
         cvegeo_to_row = {cve: idx for idx, cve in enumerate(self.cvegeo_index)}
         missing_cols = [c for c in D.columns if c not in cvegeo_to_row]
-
         if missing_cols:
             raise KeyError(f"Algunas columnas de D no están en df_evaluacion.CVEGEO: {missing_cols[:10]}...")
 
-        # mapear filas y columnas de D a índices en self.s_cultivos
-        D_index_list = D.index.to_list()
-        row_map = [cvegeo_to_row[cve] for cve in D_index_list]
+        # Mapear filas y columnas de D a índices en self.s_cultivos
+        row_map = [cvegeo_to_row[cve] for cve in D.index]
         col_map = [cvegeo_to_row[c] for c in D.columns]
-
-        # sanity check shapes
-        if self.s_cultivos.shape[0] < max(row_map) + 1 or self.s_cultivos.shape[1] < max(col_map) + 1:
-            raise RuntimeError("self.s_cultivos tiene dimensiones incompatibles con los índices de D.")
 
         # Extraer submatriz S para D
         S_for_D = self.s_cultivos[np.ix_(row_map, col_map)].astype(np.float32)
 
-        # D como numpy
+        # Ignorar comparaciones fila=columna
+        same_id_mask = np.equal.outer(np.array(D.index, dtype=object),
+                                    np.array(D.columns, dtype=object))
+        S_for_D[same_id_mask] = np.nan
+
+        # Calcular confianza (1 - |D - S|)
         D_vals = D.values.astype(np.float32)
+        confianza_temp = 1.0 - np.abs(D_vals - S_for_D)
 
-        # calcular confianza
-        S_diff = np.abs(D_vals - S_for_D)
-        confianza = 1.0 - S_diff
+        # Crear DataFrame para calcular media por columna y promedio final
+        confianza_temp_df = pd.DataFrame(confianza_temp, columns=D.columns, index=D.index)
 
-        # promedio por columna (municipio objetivo), ignorando NaNs
-        col_means = np.nanmean(confianza, axis=0)  # shape: (n_cols,)
-        # promedio global de la métrica por municipio (float)
-        return float(np.mean(col_means))
+        # Multiplicar por 100 para que coincida con allstats
+        confianza_stats_percent_temp = confianza_temp_df.agg(['mean'], axis=0) * 100
+
+        # Promedio general: media de las medias por columna
+        promedio_general = float(confianza_stats_percent_temp.mean(axis=1).iloc[0])
+
+        return promedio_general
+    
 
     def similarity_index_evaluation(self, df_evaluacion:pd.DataFrame = None, confianza_path: str = None, parameters_type= None,
                                     n_initial: int=1000,
@@ -457,6 +476,8 @@ class TDA_similarity(BaseUtils):
                 raise ValueError("Todas las matrices deben tener la misma forma.")
             mats.append(D.values.astype(float))
 
+        self.seed_similarity()
+
         # Si no se pide búsqueda, usar pesos existentes o uniformes
         if parameters_type != 'search':
             if self.weights is None:
@@ -464,11 +485,10 @@ class TDA_similarity(BaseUtils):
             elif len(self.weights) != n:
                 raise ValueError("La cantidad de pesos no coincide con el número de matrices.")
             combined_distance = sum(w * D for w, D in zip(self.weights, distance_matrices))
+            self.logger.info(f"Los pesos usados son: {self.weights}")
             return pd.DataFrame(1 - combined_distance, index=idx, columns=cols)
 
         rng = np.random.default_rng(seed)
-
-        self.seed_similarity()
 
         # ---- 1) Generar candidatos ----
         if n == 1:
@@ -513,7 +533,7 @@ class TDA_similarity(BaseUtils):
 
         # ---- 3) Refinamiento local ----
         base_scale = 0.2
-        neighbors_per_step = max(12, int(n_initial // 2))
+        neighbors_per_step = max(14, int(n_initial // 2))
 
         for step in range(m_refine):
             perturb_scale = (refine_decay ** step) * base_scale

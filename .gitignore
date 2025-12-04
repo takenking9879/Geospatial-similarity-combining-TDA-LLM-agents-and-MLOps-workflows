@@ -218,3 +218,4 @@ terraform/my-ec2-key.pub
 terraform/.terraform.lock.hcl
 terraform/terraform.tfstate.backup
 terraform/terraform.tfstate
+output_aux/
