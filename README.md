@@ -56,7 +56,6 @@ El flujo técnico desarrollado para el **Análisis Topológico de Datos (TDA)** 
 > ⚠️ Nota de autoría: Este repositorio contiene mi versión individual, basada exclusivamente en mi trabajo dentro de un proyecto originalmente realizado en equipo. Todo el código y análisis aquí corresponden únicamente a mi contribución y a mejoras adicionales realizadas por mí, sin incluir trabajo de otros miembros del equipo. La base de datos relacional (PostgreSQL) y la versión de la app desarrolladas por el resto del equipo no se incluyen, ya que ellos se encargaron únicamente de esas partes y no forman parte de mi contribución.
 
 
-
 ---
 
 ## 📂 Datos y Preprocesamiento
